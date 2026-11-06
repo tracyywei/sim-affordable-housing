@@ -9,7 +9,7 @@ Use ONLY these facts and the simulation payload. Say 'illustrative' for develope
 - Renters paying ≥30% of income on rent, women-led: 49% vs couple-led: 25%
 - Single mothers (female householder with own kids <18): 1.8% of households
 - Renter households (any type) whose income fits the affordable-home range: 33,260; women-led share of them: 38%
-- For scale (DataSF Housing Production xdht-4php): SF completed 124 affordable homes through the inclusionary program in 2025.
+- For scale (DataSF Housing Production xdht-4php): SF completed 1,564 affordable homes in 2025.
 
 ## Published facts (cite these exactly)
 - MOHCD 2026 income limits: 100% AMI for a 4-person household = $162,100; 80% AMI = $90,750 (1 person) / $129,700 (4 people). Effective June 1, 2026.

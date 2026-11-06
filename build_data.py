@@ -96,6 +96,7 @@ if exists("pums_sf_householders.json"):
             "disability": g(r, "DIS") == "1",
             "puma": g(r, "PUMA") or g(r, "public use microdata area"),
             "occp": g(r, "OCCP"),
+            "esr": g(r, "ESR"),
         })
     json.dump(households, open("data/households.json", "w"))
     W = sum(x["weight"] for x in households)
@@ -168,21 +169,20 @@ if households:
                 "rentShare": x["rentBurden"], "status": x["status"], "gap": x["gap"], "occp": x["occp"],
                 "persona": pname, "homeBedrooms": home_br(x["size"]), "limit": limit(x["size"]),
                 "floor": floor_inc(home_br(x["size"]))})
-    # SPEC §4.4 "For scale": affordable homes completed through the inclusionary program in the latest full year
+    # SPEC §4.4 "For scale": ALL affordable homes completed in the latest full year (Housing Production xdht-4php)
     forScale = None
     if exists("housing_production_2005_present.csv"):
         hp = list(csv.DictReader(open(os.path.join(RAW, "housing_production_2005_present.csv"), encoding="utf-8-sig")))
-        c_year, c_aff, c_type = "BMR Reporting Year", "Affordable Units", "Project Affordability Type"
-        if hp and all(c in hp[0] for c in (c_year, c_aff, c_type)):
+        c_year, c_aff = "BMR Reporting Year", "Affordable Units"
+        if hp and all(c in hp[0] for c in (c_year, c_aff)):
             years = [int(r[c_year]) for r in hp if (r[c_year] or "").isdigit()]
             # latest FULL year: the max year in the file is the current, partial year
             full = max(years) - 1
-            incl = [r for r in hp if r[c_year] == str(full) and r[c_type].lower().startswith("incl")]
-            tot = sum(num(r[c_aff]) or 0 for r in hp if r[c_year] == str(full))
-            n_incl = int(sum(num(r[c_aff]) or 0 for r in incl))
-            print(f"\nFOR SCALE: housing_production columns used: year='{c_year}' units='{c_aff}' type='{c_type}' (types starting 'Incl')")
-            print(f"  {full}: {n_incl} inclusionary affordable homes ({len(incl)} projects); all affordable incl. 100%-affordable: {tot:,.0f}; max year in file {max(years)} (partial)")
-            if n_incl > 0: forScale = {"affordableHomes": n_incl, "year": full}
+            rows_ = [r for r in hp if r[c_year] == str(full)]
+            tot = int(sum(num(r[c_aff]) or 0 for r in rows_))
+            print(f"\nFOR SCALE: housing_production columns used: year='{c_year}' units='{c_aff}' (all project types)")
+            print(f"  {full}: {tot:,} affordable homes completed ({sum(1 for r in rows_ if (num(r[c_aff]) or 0) > 0)} projects with affordable units); max year in file {max(years)} (partial, skipped)")
+            if tot > 0: forScale = {"affordableHomes": tot, "year": full}
         else:
             print("  ! housing_production columns not found; meta.forScale = null")
     counts = {s_: sum(1 for w in women100 if w["status"] == s_) for s_ in ("too_much", "too_little", "qualifies")}
@@ -191,20 +191,32 @@ if households:
             "rent": {b: round(rent(b)) for b in range(4)}, "floor": {b: floor_inc(b) for b in range(4)},
             "limit": {s_: limit(s_) for s_ in range(1, 9)}, "forScale": forScale}
     json.dump(women100, open("public/data/women100.json", "w"), indent=1)
-    # SPEC §5.5 / §9.4: neighborhood = exact `nhood` value in sf-neighborhoods.geojson; jobs are invented labels
-    display = {"Linh": ("Excelsior", "Home health aide"), "Rosa": ("Mission", "Retired housekeeper"),
-               "Ana": ("Sunset/Parkside", "Dental hygienist"), "Priya": ("Mission Bay", "Lab technician")}
+    # SPEC §5.5 / §9.4: neighborhood = exact `nhood` value in sf-neighborhoods.geojson.
+    # job = the record's REAL occupation (OCCP), official 2018 Census title from the PUMS data dictionary,
+    # shortened to plain words below. "Retired " is prefixed only if the record is not in the labor force (ESR=6).
+    hood = {"Linh": "Excelsior", "Rosa": "Mission", "Ana": "Sunset/Parkside", "Priya": "Mission Bay"}
+    PLAIN_OCCP = {"4110": "Waitress", "4230": "Housekeeper", "8830": "Photo lab worker", "0710": "Management analyst"}
+    occ_title = {}
+    dict_path = os.path.join(RAW, f"pums{YEAR}", f"PUMS_Data_Dictionary_{YEAR}.csv")
+    if os.path.exists(dict_path):
+        for r in csv.reader(open(dict_path, encoding="utf-8-sig", errors="replace")):
+            if len(r) >= 7 and r[0] == "VAL" and r[1] == "OCCP": occ_title[r[4]] = r[6]
     personas_out = {}
+    print("  persona jobs (OCCP -> official title -> plain label, ESR):")
     for k in personas:
         w = next((w for w in women100 if w["persona"] == k), None)
         assert w is not None, f"persona {k} not among the 100"
-        personas_out[k] = {**w, "neighborhood": display[k][0], "job": display[k][1]}
+        code, esr = personas[k]["occp"], personas[k].get("esr")
+        assert code in PLAIN_OCCP, f"add a plain label for OCCP {code} ({occ_title.get(code)}) to PLAIN_OCCP"
+        job = ("Retired " + PLAIN_OCCP[code].lower()) if esr == "6" else PLAIN_OCCP[code]
+        print(f"    {k:6} {code} -> {occ_title.get(code, '(dictionary not found)')} -> {job!r}  (ESR {esr})")
+        personas_out[k] = {**w, "neighborhood": hood[k], "job": job}
     if os.path.exists("public/data/sf-neighborhoods.geojson"):
         names = {f["properties"].get("nhood") for f in json.load(open("public/data/sf-neighborhoods.geojson"))["features"]}
         bldg = ["Lakeshore", "Outer Mission", "South of Market", "Mission Bay", "Financial District/South Beach", "Mission",
                 "Hayes Valley", "Bayview Hunters Point", "Treasure Island", "Potrero Hill", "Western Addition", "Excelsior",
                 "Sunset/Parkside", "Tenderloin", "Bernal Heights", "Outer Richmond", "Inner Sunset", "Visitacion Valley"]
-        missing = [n for n in bldg + [v[0] for v in display.values()] if n not in names]
+        missing = [n for n in bldg + list(hood.values()) if n not in names]
         print(f"  geojson 'nhood' check: {len(names)} names; missing from SPEC §4.1/§5.5: {missing or 'none'}")
         assert not missing
     json.dump(personas_out, open("public/data/personas.json", "w"), indent=1)
@@ -310,7 +322,7 @@ if households:
               f"- Renter households (any type) whose income fits the affordable-home range: {meta['qualifiers']:,}; women-led share of them: {meta['womenShareOfQualifiers']*100:.0f}%",
               ""]
     if meta.get("forScale"):
-        lines.insert(-1, f"- For scale (DataSF Housing Production xdht-4php): SF completed {meta['forScale']['affordableHomes']:,} affordable homes through the inclusionary program in {meta['forScale']['year']}.")
+        lines.insert(-1, f"- For scale (DataSF Housing Production xdht-4php): SF completed {meta['forScale']['affordableHomes']:,} affordable homes in {meta['forScale']['year']}.")
 lines += [
  "## Published facts (cite these exactly)",
  "- MOHCD 2026 income limits: 100% AMI for a 4-person household = $162,100; 80% AMI = $90,750 (1 person) / $129,700 (4 people). Effective June 1, 2026.",

@@ -16,7 +16,7 @@
   "limit": 116700,
   "floor": 62250,
   "neighborhood": "Excelsior",
-  "job": "Home health aide"
+  "job": "Waitress"
  },
  "Rosa": {
   "id": "w82",
@@ -35,7 +35,7 @@
   "limit": 90750,
   "floor": 54450,
   "neighborhood": "Mission",
-  "job": "Retired housekeeper"
+  "job": "Housekeeper"
  },
  "Ana": {
   "id": "w88",
@@ -54,7 +54,7 @@
   "limit": 90750,
   "floor": 54450,
   "neighborhood": "Sunset/Parkside",
-  "job": "Dental hygienist"
+  "job": "Photo lab worker"
  },
  "Priya": {
   "id": "w2",
@@ -73,6 +73,6 @@
   "limit": 90750,
   "floor": 54450,
   "neighborhood": "Mission Bay",
-  "job": "Lab technician"
+  "job": "Management analyst"
  }
 }

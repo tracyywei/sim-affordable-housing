@@ -79,12 +79,14 @@ if [ -n "$PUMAS" ]; then
   echo "  SF PUMAs: $PUMAS"
   get pums$Y/csv_hca.zip "https://www2.census.gov/programs-surveys/acs/data/pums/$Y/1-Year/csv_hca.zip"
   get pums$Y/csv_pca.zip "https://www2.census.gov/programs-surveys/acs/data/pums/$Y/1-Year/csv_pca.zip"
+  # data dictionary: OCCP occupation titles (persona jobs) and ESR employment status
+  get pums$Y/PUMS_Data_Dictionary_$Y.csv "https://www2.census.gov/programs-surveys/acs/tech_docs/pums/data_dict/PUMS_Data_Dictionary_$Y.csv"
   # householder rows only (RELSHIPP=20 = reference person), housing units only (TYPEHUGQ=1)
   python3 -I - "$Y" "$PUMAS" <<'PY'
 import csv, io, json, sys, zipfile
 Y, pumas = sys.argv[1], set(sys.argv[2].split(","))
 HV = "SERIALNO,WGTP,NP,HHT2,HINCP,ADJINC,TEN,GRNTP,RNTP,BDSP,NOC,HUPAC,LNGI,PUMA".split(",")
-PV = "AGEP,SEX,DIS,OCCP".split(",")
+PV = "AGEP,SEX,DIS,OCCP,ESR".split(",")
 def rows(zp, name):
     z = zipfile.ZipFile(zp); n = next(f for f in z.namelist() if f.endswith(".csv"))
     return csv.DictReader(io.TextIOWrapper(z.open(n), encoding="utf-8"))
