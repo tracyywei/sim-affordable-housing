@@ -22,9 +22,10 @@
   --shadow: 3px 3px 0 var(--ink);
   --shadow-press: 1px 1px 0 var(--ink);
 
-  --font-title: var(--font-marker), "Permanent Marker", cursive;
-  --font-hand: var(--font-caveat), "Caveat", cursive;
-  --font-ui: var(--font-body), "Atkinson Hyperlegible", system-ui, sans-serif;
+  /* Nov 6 revision: one civic typeface everywhere (Public Sans, USWDS). Title/hand tokens alias to it. */
+  --font-ui: var(--font-body), "Public Sans", system-ui, sans-serif;
+  --font-title: var(--font-ui);
+  --font-hand: var(--font-ui);
 }
 
 * { box-sizing: border-box; }
@@ -34,6 +35,7 @@ body {
   color: var(--ink);
   font-family: var(--font-ui);
   font-size: 15px;
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
 button { font: inherit; color: inherit; }

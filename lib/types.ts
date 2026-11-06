@@ -30,6 +30,7 @@ export interface Woman {
   homeBedrooms: number;       // 0 = studio, 1, 2, 3
   limit: number;              // max income for her household size
   floor: number;              // min income for her home size
+  puma?: string | null;       // PUMS area code (e.g. "07507"); used to place her in a real part of SF
 }
 
 /** One entry of public/data/personas.json = a Woman + display fields. */
@@ -51,6 +52,9 @@ export interface Meta {
   limit: Record<string, number>;       // "1".."8" people -> max income
   forScale: { affordableHomes: number; year: number } | null; // SPEC §4.4
   synthetic?: boolean;                 // true only if the SPEC §7 PUMS fallback was used
+  scale?: number;                      // households represented by each figure (100)
+  womenRenterHouseholds?: number;      // weighted total of SF women-led renter households
+  pumaNeighborhoods?: Record<string, string[]>; // PUMA code -> exact `nhood` names it covers (for placement)
 }
 
 /** data/validation.json rows (served to the drawer via import). */
@@ -156,8 +160,8 @@ export interface ZoomControlsProps { onZoomIn(): void; onZoomOut(): void; onRese
 export interface ControlBarProps {
   pct: number;
   onChange(pct: number): void;
-  onExplain(): void;
-  explainLoading: boolean;
+  onExplain?(): void;         // unused: Claude/Explain removed from the UI (Nov 6 revision)
+  explainLoading?: boolean;
   hasDragged: boolean;
 }
 
