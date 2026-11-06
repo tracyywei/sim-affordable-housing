@@ -1,6 +1,6 @@
-// Owner: Agent E. The slider (round knob; arrows ±1, PgUp/PgDn ±5) and the one-line trade-off caption.
+// Owner: Agent E. The slider (house thumb; arrows ±1, PgUp/PgDn ±5).
 import type { CSSProperties, KeyboardEvent } from 'react';
-import { pctPill, sliderLabel, tradeoffCaption } from '@/lib/copy';
+import { pctPill, sliderLabel } from '@/lib/copy';
 import { MAX_PCT } from '@/lib/constants';
 import type { ControlBarProps } from '@/lib/types';
 
@@ -39,7 +39,6 @@ export default function ControlBar({ pct, onChange }: ControlBarProps) {
           {TICKS.map((v) => <span key={v} className="cb-tick" style={{ left: at(v) }}>{pctPill(v)}</span>)}
         </div>
       </div>
-      <p className="cb-caption" data-hud="tradeoff">{tradeoffCaption()}</p>
     </section>
   );
 }

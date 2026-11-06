@@ -278,11 +278,16 @@ export function computeLayout(
     height: 0.9 + rand() * 0.2,
     bobDelay: rand() * 3,
   });
+  const personaPts: Pt[] = [];
   // find each persona's figure by woman.persona (ids change between data builds)
   for (const w of women) {
     const p = w.persona ? personas[w.persona] : undefined;
     if (!p) continue;
-    const pt = sampleIn(regionFor(p.neighborhood), 22);
+    // keep name tags (~50 px wide) from colliding with another persona's tag
+    const reg = regionFor(p.neighborhood);
+    let pt = sampleIn(reg, 22);
+    for (let i = 0; i < 60 && personaPts.some((q) => Math.abs(q.x - pt.x) < 66 && Math.abs(q.y - pt.y) < 30); i++) pt = sampleIn(reg, 22);
+    personaPts.push(pt);
     taken.push({ ...pt, r: 22 });
     // room for the name tag, and for Linh's "this is Linh" note to the upper right
     taken.push({ x: pt.x, y: pt.y - 24, r: 20 });
@@ -323,7 +328,7 @@ export interface Lineup { spots: Record<string, Pt>; blocks: LineupBlock[]; pane
 /** Everything (labels, figures, odds line) stays between these y values so the bottom panels never cover it. */
 export const LINEUP_TOP = 150;
 export const LINEUP_BOTTOM = 440;
-const LINEUP_HEAD = 52;      // label + count above each block
+const LINEUP_HEAD = 50;      // label + count above each block
 const LINEUP_FOOT = 46;      // odds line under the eligible block
 
 /** Three blocks (too_much, too_little, qualifies) side by side in the middle of the map area. */

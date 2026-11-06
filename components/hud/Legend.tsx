@@ -1,5 +1,5 @@
-// Owner: Agent E. Legend: who the figures are (share + households), gap line, odds, chips, group button.
-import { chrome, figureScale, groupRow, legendGapLine, legendOddsLine, legendTitle, scaleLine } from '@/lib/copy';
+// Owner: Agent E. Legend: three groups (icon · label · share), odds under Eligible, chips, group button.
+import { chrome, figureScale, groupRow, legendOddsLine, legendTitle, scaleLine } from '@/lib/copy';
 import { STATUSES, type LegendProps, type Meta, type Status } from '@/lib/types';
 import PersonaChips from './PersonaChips';
 
@@ -15,7 +15,7 @@ function FigureIcon({ status }: { status: Status }) {
 }
 
 /** `meta` is extra to LegendProps (needed for the figure scale). */
-export default function Legend({ counts, gapCount, result, lineup, onToggleLineup, personas, onPersona, meta }: LegendProps & { meta?: Meta }) {
+export default function Legend({ counts, result, lineup, onToggleLineup, personas, onPersona, meta }: LegendProps & { meta?: Meta }) {
   const total = STATUSES.reduce((s, k) => s + counts[k], 0);
   const scale = meta ? figureScale(meta) : 1;
   return (
@@ -30,8 +30,6 @@ export default function Legend({ counts, gapCount, result, lineup, onToggleLineu
               <FigureIcon status={s} />
               <span>{row.label}</span>
               <span className="count" data-legend-count={s}>{row.pct}</span>
-              <span className="legend-sub">{row.households}</span>
-              {s === 'too_much' && <span className="legend-sub" data-hud="gap-line">{legendGapLine(gapCount, scale)}</span>}
               {s === 'qualifies' && <span className="legend-sub" data-hud="legend-odds">{legendOddsLine(result)}</span>}
             </li>
           );

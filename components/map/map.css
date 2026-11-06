@@ -178,3 +178,4 @@
 .lineup-odds { font-family: var(--font-ui); font-size: 14px; line-height: 1.35; text-shadow: none; }
 .lineup-panel { fill-opacity: 0.9; }
 .lineup-odds { left: 0; right: 0; }
+.persona-tag rect { stroke: #fff; stroke-width: 1.5; }

@@ -18,7 +18,7 @@ import Building, { buildingHeight } from './Building';
 import Popover from './Popover';
 import Whimsy from './Whimsy';
 import {
-  buildingPopover, chrome, lineupLabels as lineupLabelsCopy, lineupOddsLine, personaHeader, personaLines, womanTooltip,
+  buildingPopover, chrome, figureScale as householdsPerFigure, groupRow, lineupOddsLine, personaHeader, personaLines, womanTooltip,
 } from '@/lib/copy';
 
 const STAGGER_MS = 5;
@@ -305,7 +305,6 @@ export default function SfMap(props: SfMapProps) {
     }
   }
 
-  const lineupLabels = lineupLabelsCopy(data.meta.counts);
 
   return (
     <div
@@ -356,7 +355,11 @@ export default function SfMap(props: SfMapProps) {
             <rect className="lineup-panel" aria-hidden x={lineupPos.panel.x} y={lineupPos.panel.y}
               width={lineupPos.panel.w} height={lineupPos.panel.h} rx={18} />
           )}
-          <g className={`figures${reducedMotion ? '' : ' walk'}`}>{womenNodes}</g>
+          <g className={`figures${reducedMotion ? '' : ' walk'}`}>
+            {womenNodes?.filter((n) => !personaById.has(String(n.key)))}
+            {/* personas last so their rings and name tags sit on top of the crowd */}
+            {womenNodes?.filter((n) => personaById.has(String(n.key)))}
+          </g>
         </g>
       </svg>
 
@@ -366,8 +369,15 @@ export default function SfMap(props: SfMapProps) {
             <div key={b.status} className={`lineup-block ${b.status}`} data-lineup-block={b.status}
               style={{ left: b.x + b.w / 2, top: b.y, width: Math.max(b.w + 40, 180), ['--block-h' as string]: `${b.h}px` }}>
               <div className="lineup-head">
-                <div className="lineup-label">{lineupLabels[b.status].label}</div>
-                <div className="lineup-count num">{lineupLabels[b.status].count}</div>
+                {(() => {
+                  const g = groupRow(b.status, b.count, data.women.length, householdsPerFigure(data.meta));
+                  return (
+                    <>
+                      <div className="lineup-label">{g.label}</div>
+                      <div className="lineup-count num">{g.pct} · {g.households}</div>
+                    </>
+                  );
+                })()}
               </div>
               {b.status === 'qualifies' && (
                 <div className="lineup-odds" style={{ top: b.h + 6 }}>{result ? lineupOddsLine(result).replace(/1 in (\S+)/, '1\u00a0in\u00a0$1') : null}</div>
