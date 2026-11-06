@@ -719,3 +719,14 @@ export function explainInstruction(total: number): string {
     `Also: never use the words AMI, inclusionary, BMR, feasible, feasibility or pencils. Say "gets built" / "not built" instead. When you mention odds, say "from these ${total} buildings", never "per year" or "this year". Use only the numbers given in the facts and payload, written as digits; don't compute new percentages, ratios or totals. Plain text only, no markdown, no lists. Keep it under 75 words.`,
   ].join('\n');
 }
+
+/* ------------------------------------------------------------------ lottery simulation */
+
+export const lotteryButton = 'Run the lottery';
+export const lotteryRerunButton = 'Run it again';
+
+/** "In 1,000 simulated lotteries, women-led households won 54 of 141 homes (44–64)." */
+export function lotteryResult(s: { runs: number; homes: number; median: number; low: number; high: number }): string {
+  if (s.homes === 0) return 'No affordable homes to give out at this setting.';
+  return `In ${fmtInt(s.runs)} simulated lotteries, women-led households won ${fmtInt(s.median)} of ${fmtInt(s.homes)} homes (usually ${fmtInt(s.low)}–${fmtInt(s.high)}).`;
+}

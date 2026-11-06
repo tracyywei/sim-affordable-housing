@@ -97,3 +97,13 @@
   .legend-rows, .legend-sub { display: none; }
   .controlbar { left: 8px; right: 8px; width: auto; margin-left: 0; bottom: 8px; }
 }
+
+/* lottery simulation (odds card) */
+.lottery { margin-top: 8px; padding-top: 8px; border-top: 1px solid #E2DDD2; }
+.lottery-btn {
+  font: inherit; font-size: 13px; font-weight: 700; padding: 5px 12px;
+  background: var(--card); color: var(--ink); border: 1px solid var(--ink); border-radius: 6px; cursor: pointer;
+}
+.lottery-btn:hover { background: #F3F0E8; }
+.lottery-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.lottery-result { font-size: 13px; line-height: 1.35; margin: 6px 0 0; color: #3A3A3A; }
