@@ -1,5 +1,5 @@
 // Owner: Agent E. The slider (house thumb, PgUp/PgDn ±5), live sentence and ✨ Explain this.
-import type { CSSProperties, KeyboardEvent } from 'react';
+import { useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { chrome, pctPill, sliderLabel, sliderSentence } from '@/lib/copy';
 import { MAX_PCT, START_PCT } from '@/lib/constants';
 import type { ControlBarProps } from '@/lib/types';
@@ -12,6 +12,10 @@ function splitSparkle(s: string): [string, string] {
 }
 
 export default function ControlBar({ pct, onChange, onExplain, explainLoading, hasDragged }: ControlBarProps) {
+  // drag direction, so the house thumb leans the way it's moving
+  const [prevPct, setPrevPct] = useState(pct);
+  const [dir, setDir] = useState<'up' | 'down'>('up');
+  if (prevPct !== pct) { setPrevPct(pct); setDir(pct > prevPct ? 'up' : 'down'); }
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'PageUp') { e.preventDefault(); onChange(Math.min(MAX_PCT, pct + 5)); }
     else if (e.key === 'PageDown') { e.preventDefault(); onChange(Math.max(0, pct - 5)); }
@@ -23,7 +27,7 @@ export default function ControlBar({ pct, onChange, onExplain, explainLoading, h
     <section className="card controlbar" aria-labelledby="cb-label" data-hud="controlbar">
       <div className="cb-top">
         <p className="cb-label" id="cb-label">{sliderLabel}</p>
-        <span key={pct} className="pill pct-pill bounce num" aria-hidden="true" data-hud="pct">{pill}</span>
+        <span key={pct} className={`pill pct-pill num${hasDragged ? ' bounce' : ''}`} aria-hidden="true" data-hud="pct">{pill}</span>
       </div>
       <div className="cb-slider">
         <span className={`drag-me${hasDragged ? ' gone' : ''}`} style={{ left: `calc(15px + (100% - 30px) * ${pct / MAX_PCT})` }} aria-hidden="true">
@@ -40,6 +44,7 @@ export default function ControlBar({ pct, onChange, onExplain, explainLoading, h
           onKeyDown={onKeyDown}
           aria-labelledby="cb-label"
           aria-valuetext={pill}
+          data-dir={dir}
           style={{ '--fill': at(pct) } as CSSProperties}
           data-hud="slider"
         />

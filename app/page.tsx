@@ -177,6 +177,12 @@ export default function Page() {
       {selected && !lineup && <p className="zoom-hint" aria-hidden="true">{chrome.escToZoomOut}</p>}
       <TitleBlock onOpenInfo={() => setDrawerOpen(true)} />
       <InfoDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} meta={data.meta} validation={validation} />
+      <div className="grain" aria-hidden="true">
+        <svg xmlns="http://www.w3.org/2000/svg">
+          <filter id="hud-paper-grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" /><feColorMatrix type="saturate" values="0" /></filter>
+          <rect width="100%" height="100%" filter="url(#hud-paper-grain)" />
+        </svg>
+      </div>
       <div className="map-layer">
         <SfMap
           data={data}

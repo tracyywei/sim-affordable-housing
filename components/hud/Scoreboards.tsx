@@ -1,7 +1,23 @@
 // Owner: Agent E. 🏢 Buildings · 🏠 Affordable homes · 🎟 Odds, each with its change vs. the starting point in words.
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { affordableCard, buildingsCard, noBuildingsBanner, oddsCard, type ScoreCard } from '@/lib/copy';
 import type { ScoreboardsProps } from '@/lib/types';
+
+/** Rolling digits (whimsy): each digit's 0–9 strip is a CSS pseudo-element; the real digit stays in the DOM, transparent. */
+function Odometer({ text }: { text: string }) {
+  const chars = [...text];
+  return (
+    <span className="odo">
+      {chars.map((c, i) => {
+        const pos = chars.length - i; // key from the right so a digit keeps its place as numbers grow
+        if (!/[0-9]/.test(c)) return <span key={`c${pos}`} style={{ whiteSpace: 'pre' }}>{c}</span>;
+        return (
+          <span key={`d${pos}`} className="odo-digit" style={{ '--d': `-${Number(c) * 1.1}em` } as CSSProperties}>{c}</span>
+        );
+      })}
+    </span>
+  );
+}
 
 const TONE_CLASS = { more: 'up', fewer: 'down', same: 'same' } as const;
 
@@ -12,10 +28,10 @@ function Score({ kind, icon, card, tilt, circleKey, sentence = false }: { kind: 
       <p className="sr-only">{card.value}</p>
       <div aria-hidden="true">
         <span className="score-big" style={sentence ? { fontSize: 18 } : undefined}>
-          {card.big}
+          {sentence ? card.big : <Odometer text={card.big} />}
           {circleKey !== undefined && (
             <svg key={circleKey} className="odds-circle" viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true">
-              <path d="M8 26 C 8 6, 92 4, 94 24 C 96 44, 14 48, 6 30 C 3 20, 30 8, 52 7" vectorEffect="non-scaling-stroke" />
+              <path d="M8 25 C 8 7, 92 5, 94 23 C 96 41, 14 45, 6 29 C 3 20, 30 9, 52 8" vectorEffect="non-scaling-stroke" />
             </svg>
           )}
         </span>
