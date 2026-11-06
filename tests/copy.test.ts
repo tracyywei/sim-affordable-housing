@@ -93,7 +93,7 @@ describe('templates fill in from the fixture', () => {
   });
   test('Ana (qualifies) quotes the odds from these buildings', () => {
     expect(copy.personaLines(personas.Ana, base, meta).body).toBe(
-      `She can apply. With ${copy.fmtInt(base.oddsN!)} people competing for every home, her odds are 1 in ${copy.fmtInt(base.oddsN!)} from these ${total} buildings.`,
+      `She can apply. With ${copy.fmtInt(base.oddsN!)} households competing for every home, her odds are 1 in ${copy.fmtInt(base.oddsN!)} from these ${total} buildings.`,
     );
   });
   test('Priya (gap) says the rule can\'t help her', () => {
@@ -107,7 +107,7 @@ describe('templates fill in from the fixture', () => {
     expect(copy.womanTooltip(w)).toBe(`Woman, 2 people at home, earns ${copy.fmtK(w.income)} · ${copy.statusLabel(w.status)}`);
     const folsom = BUILDINGS[2];
     expect(copy.buildingPopover(folsom, false, 10, 0).body).toContain(`It gets built up to ${folsom.breakEven}%.`);
-    expect(copy.buildingPopover(folsom, true, 3, 6).body).toBe(`6 of its ${folsom.units} apartments are affordable.`);
+    expect(copy.buildingPopover(folsom, true, 3, 6).body).toBe(`6 of its ${folsom.units} apartments are affordable (made-up building, simplified model).`);
     expect(copy.affordableMeansCard(meta).text).toBe(
       'An affordable studio costs $2,269 a month. To get one, a woman living alone must earn between $54,450 and $90,750. Family of 3: $62,250–$116,700 for a 1-bedroom.',
     );

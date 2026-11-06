@@ -336,7 +336,7 @@ export function personaLines(p: Persona, result: SliderResult, meta?: Meta): Per
         body = `She can apply, but at this level no affordable homes get built, so there's nothing to apply for.`;
       } else {
         const n = fmtInt(result.oddsN);
-        body = `She can apply. With ${n} people competing for every home, her odds are 1 in ${n} from these ${total} buildings.`;
+        body = `She can apply. With ${n} households competing for every home, her odds are 1 in ${n} from these ${total} buildings.`;
       }
       break;
     }
@@ -388,8 +388,8 @@ export function buildingPopover(b: BuildingDef, built: boolean, pct: number, aff
   if (built) {
     const body =
       pct === 0
-        ? `None of its ${fmtInt(b.units)} apartments have to be affordable at this level.`
-        : `${fmtInt(affordableInBuilding)} of its ${fmtInt(b.units)} apartments are affordable.`;
+        ? `None of its ${fmtInt(b.units)} apartments have to be affordable at this level (made-up building, simplified model).`
+        : `${fmtInt(affordableInBuilding)} of its ${fmtInt(b.units)} apartments are affordable (made-up building, simplified model).`;
     return { title: b.name, sub, head, status: '✓ Built', built, body };
   }
   const why = "The developer says it doesn't make enough money at this level (made-up numbers, simplified model).";
@@ -644,6 +644,7 @@ export function explainPayloadKey(req: ExplainRequest): string {
 export function explainInstruction(total: number): string {
   return [
     '2–3 plain sentences for someone who knows nothing about housing. Use only numbers in the payload. Say who is helped and who is left out, and why (too much / too little / too few homes). Don\'t recommend a policy.',
+    'Get the cause right: at every slider setting, most of these women are left out because of income (they earn too much or too little to qualify), and the slider never changes that. Too few homes only affects the ones who qualify, through their odds. Never say that too few homes is why most women are left out.',
     `Also: never use the words AMI, inclusionary, BMR, feasible, feasibility or pencils. Say "gets built" / "not built" instead. When you mention odds, say "from these ${total} buildings", never "per year" or "this year". Use only the numbers given in the facts and payload, written as digits; don't compute new percentages, ratios or totals. Plain text only, no markdown, no lists. Keep it under 75 words.`,
   ].join('\n');
 }
