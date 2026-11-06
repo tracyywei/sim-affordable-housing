@@ -57,7 +57,7 @@ export default function Scoreboards({ result, baseline, total }: ScoreboardsProp
       {result.buildingsBuilt === 0 && <p className="banner" role="status" data-hud="no-buildings">{noBuildingsBanner}</p>}
       <Score kind="buildings" icon="🏢" card={buildingsCard(result, baseline, total)} tilt="tilt-r" />
       <Score kind="affordable" icon="🏠" card={affordableCard(result, baseline)} tilt="tilt-l" />
-      <Score kind="odds" icon="🎟" card={oddsCard(result, baseline)} tilt="tilt-r" circleKey={circle} sentence={result.oddsN === null} />
+      <Score kind="odds" icon="🎟" card={result.oddsN === null ? { ...oddsCard(result, baseline), change: null } : oddsCard(result, baseline)} tilt="tilt-r" circleKey={circle} sentence={result.oddsN === null} />
     </>
   );
 }

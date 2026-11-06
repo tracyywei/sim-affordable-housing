@@ -152,7 +152,7 @@ export default function Page() {
     (selected?.kind === 'woman' && Object.values(data.personas).find((p) => p.id === selected.id)) || data.personas.Linh;
 
   return (
-    <main>
+    <main className={drawerOpen ? 'drawer-open' : undefined}>
       <ControlBar pct={pct} onChange={onChange} onExplain={onExplain} explainLoading={explain.loading} hasDragged={hasDragged} />
       <ClaudeBubble explain={explain} onClose={closeExplain} />
       <StillCaption pct={pct} womenCount={data.women.length} hasDragged={hasDragged} />
