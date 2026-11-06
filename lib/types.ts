@@ -3,6 +3,7 @@
 // Change this file only through the lead.
 
 import type { FeatureCollection, Geometry } from 'geojson';
+import type React from 'react';
 
 /* ------------------------------------------------------------------ data files */
 
@@ -146,6 +147,7 @@ export interface SfMapProps {
   lineup: boolean;
   reducedMotion: boolean;
   onSelect(sel: Selection): void;       // null = close popover (Esc / ⟲ / ✕)
+  cameraRef?: React.Ref<CameraHandle>;  // page uses this for zoom buttons, chips, ⟲
 }
 
 export interface TitleBlockProps { onOpenInfo(): void; }
