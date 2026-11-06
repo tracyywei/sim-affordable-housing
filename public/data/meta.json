@@ -7,6 +7,11 @@
  "gapCount": 73,
  "qualifiers": 33260,
  "womenShareOfQualifiers": 0.3834,
+ "qualifierShares": {
+  "women_led": 0.3834,
+  "couple_led": 0.309,
+  "men_led": 0.3076
+ },
  "rent": {
   "0": 2269,
   "1": 2594,

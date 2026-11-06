@@ -23,3 +23,14 @@ describe('lottery simulation', () => {
     expect([s.homes, s.median, s.low, s.high]).toEqual([0, 0, 0, 0]);
   });
 });
+
+describe('lottery breakdown', () => {
+  test('all homes go to someone, split roughly by eligible shares', () => {
+    const s = runLottery(meta, results[10]);
+    const shares = meta.qualifierShares!;
+    for (const k of ['women_led', 'couple_led', 'men_led'] as const) {
+      expect(Math.abs(s.byType[k].median - 141 * shares[k])).toBeLessThanOrEqual(4);
+    }
+    expect(s.sample.women_led + s.sample.couple_led + s.sample.men_led).toBe(141);
+  });
+});

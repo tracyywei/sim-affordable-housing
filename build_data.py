@@ -191,6 +191,9 @@ if households:
     counts = {s_: sum(1 for w in women100 if w["status"] == s_) for s_ in ("too_much", "too_little", "qualifies")}
     meta = {"counts": counts, "gapCount": sum(w["gap"] for w in women100), "qualifiers": round(qualifiers),
             "womenShareOfQualifiers": round(wq / qualifiers, 4) if qualifiers else None,
+            # who the eligible households are (lottery breakdown): weighted shares by household type
+            "qualifierShares": {t: round(sum(x["weight"] for x in renters if x["status"] == "qualifies" and x["hhType"] == t) / qualifiers, 4)
+                                for t in ("women_led", "couple_led", "men_led")} if qualifiers else None,
             "rent": {b: round(rent(b)) for b in range(4)}, "floor": {b: floor_inc(b) for b in range(4)},
             "limit": {s_: limit(s_) for s_ in range(1, 9)}, "forScale": forScale,
             "scale": SCALE, "womenRenterHouseholds": round(Wtot)}

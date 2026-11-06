@@ -55,6 +55,7 @@ export interface Meta {
   scale?: number;                      // households represented by each figure (100)
   womenRenterHouseholds?: number;      // weighted total of SF women-led renter households
   pumaNeighborhoods?: Record<string, string[]>; // PUMA code -> exact `nhood` names it covers (for placement)
+  qualifierShares?: Record<'women_led' | 'couple_led' | 'men_led', number> | null; // who the eligible households are
 }
 
 /** data/validation.json rows (served to the drawer via import). */

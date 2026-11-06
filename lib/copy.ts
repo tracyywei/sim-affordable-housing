@@ -722,10 +722,24 @@ export function explainInstruction(total: number): string {
 
 /* ------------------------------------------------------------------ lottery simulation */
 
-export const lotteryButton = 'Run the lottery';
-export const lotteryRerunButton = 'Run it again';
+export const lotteryButton = '🎲 Run the lottery';
+export const lotteryRerunButton = '🎲 Roll again';
+export const lotteryRolling = 'Drawing names…';
 
-/** "In 1,000 simulated lotteries, women-led households won 54 of 141 homes (44–64)." */
+export const householdTypeLabel = { women_led: 'Women-led', couple_led: 'Couples', men_led: 'Men-led' } as const;
+
+/** Header line: "1,000 simulated lotteries for 141 homes" */
+export function lotteryHeader(s: { runs: number; homes: number }): string {
+  if (s.homes === 0) return 'No affordable homes to give out at this setting.';
+  return `${fmtInt(s.runs)} simulated lotteries for ${fmtInt(s.homes)} homes. Typical winners:`;
+}
+
+/** Row: "54" + "usually 45–63" */
+export function lotteryRow(g: { median: number; low: number; high: number }): { value: string; range: string } {
+  return { value: fmtInt(g.median), range: `usually ${fmtInt(g.low)}–${fmtInt(g.high)}` };
+}
+
+/** Back-compat one-liner (tests / screen readers). */
 export function lotteryResult(s: { runs: number; homes: number; median: number; low: number; high: number }): string {
   if (s.homes === 0) return 'No affordable homes to give out at this setting.';
   return `In ${fmtInt(s.runs)} simulated lotteries, women-led households won ${fmtInt(s.median)} of ${fmtInt(s.homes)} homes (usually ${fmtInt(s.low)}–${fmtInt(s.high)}).`;
