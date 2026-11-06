@@ -44,3 +44,4 @@ next-env.d.ts
 /data/raw/
 /data/households.json
 !.env.local.example
+.env.local
