@@ -10,7 +10,7 @@
   --border: rgba(255, 255, 255, 0.7);
   --ink: #2B2B2B;
   --card: #FFFFFF;
-  --too-much: #6B7A8F;
+  --too-much: #4A5568; /* was #6B7A8F; changed: ΔE 0.7 vs --qualifies under deuteranopia */
   --too-little: #D9682B;
   --qualifies: #1F8A8A;
   --lit: #F7D774;

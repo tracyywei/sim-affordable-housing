@@ -6,8 +6,9 @@ Run after fetch_data.sh, from your project root:   python3 build_data.py
 Standard library only (no pandas needed).
 
 Writes:
-  public/data/households.json   SF householders from ACS PUMS (real, anonymized, weighted)
-  public/data/projects.json     real SF pipeline projects >= 25 units (cost fields = ILLUSTRATIVE)
+  data/households.json          SF householders from ACS PUMS (real, anonymized, weighted; not used by the app)
+  data/projects.json            real SF pipeline projects >= 25 units (cost fields = ILLUSTRATIVE; not used by the app)
+  public/data/women100.json, personas.json, meta.json   the 100 women, 4 personas, counts/odds (SPEC §5)
   data/targets.json             ACS county stats (every variable of every table, with labels)
   data/validation.json          PUMS-weighted vs ACS published, for the "it matches" check
   data/claude_context.md        compact fact sheet to paste into Claude system prompts
@@ -26,7 +27,8 @@ def num(x):
     try: return float(x)
     except (TypeError, ValueError): return None
 
-YEAR = open(os.path.join(RAW, "acs_year.txt")).read().strip() if exists("acs_year.txt") else "?"
+YEAR = open(os.path.join(RAW, "acs_year.txt")).read().strip() if exists("acs_year.txt") else None
+assert YEAR, "data/raw/acs_year.txt missing: run bash fetch_data.sh first"
 
 # ---------------------------------------------------------------- 1. ACS tables
 targets = {}
@@ -95,9 +97,9 @@ if exists("pums_sf_householders.json"):
             "puma": g(r, "PUMA") or g(r, "public use microdata area"),
             "occp": g(r, "OCCP"),
         })
-    json.dump(households, open("public/data/households.json", "w"))
+    json.dump(households, open("data/households.json", "w"))
     W = sum(x["weight"] for x in households)
-    print(f"PUMS: {len(households)} SF householder records (weights sum {W:,.0f}) -> public/data/households.json")
+    print(f"PUMS: {len(households)} SF householder records (weights sum {W:,.0f}) -> data/households.json")
 else:
     print("PUMS: not found — keep the generated-households plan from SPEC.md §6.1")
 
@@ -166,19 +168,58 @@ if households:
                 "rentShare": x["rentBurden"], "status": x["status"], "gap": x["gap"], "occp": x["occp"],
                 "persona": pname, "homeBedrooms": home_br(x["size"]), "limit": limit(x["size"]),
                 "floor": floor_inc(home_br(x["size"]))})
+    # SPEC §4.4 "For scale": affordable homes completed through the inclusionary program in the latest full year
+    forScale = None
+    if exists("housing_production_2005_present.csv"):
+        hp = list(csv.DictReader(open(os.path.join(RAW, "housing_production_2005_present.csv"), encoding="utf-8-sig")))
+        c_year, c_aff, c_type = "BMR Reporting Year", "Affordable Units", "Project Affordability Type"
+        if hp and all(c in hp[0] for c in (c_year, c_aff, c_type)):
+            years = [int(r[c_year]) for r in hp if (r[c_year] or "").isdigit()]
+            # latest FULL year: the max year in the file is the current, partial year
+            full = max(years) - 1
+            incl = [r for r in hp if r[c_year] == str(full) and r[c_type].lower().startswith("incl")]
+            tot = sum(num(r[c_aff]) or 0 for r in hp if r[c_year] == str(full))
+            n_incl = int(sum(num(r[c_aff]) or 0 for r in incl))
+            print(f"\nFOR SCALE: housing_production columns used: year='{c_year}' units='{c_aff}' type='{c_type}' (types starting 'Incl')")
+            print(f"  {full}: {n_incl} inclusionary affordable homes ({len(incl)} projects); all affordable incl. 100%-affordable: {tot:,.0f}; max year in file {max(years)} (partial)")
+            if n_incl > 0: forScale = {"affordableHomes": n_incl, "year": full}
+        else:
+            print("  ! housing_production columns not found; meta.forScale = null")
     counts = {s_: sum(1 for w in women100 if w["status"] == s_) for s_ in ("too_much", "too_little", "qualifies")}
     meta = {"counts": counts, "gapCount": sum(w["gap"] for w in women100), "qualifiers": round(qualifiers),
             "womenShareOfQualifiers": round(wq / qualifiers, 4) if qualifiers else None,
             "rent": {b: round(rent(b)) for b in range(4)}, "floor": {b: floor_inc(b) for b in range(4)},
-            "limit": {s_: limit(s_) for s_ in range(1, 9)}}
+            "limit": {s_: limit(s_) for s_ in range(1, 9)}, "forScale": forScale}
     json.dump(women100, open("public/data/women100.json", "w"), indent=1)
-    json.dump({k: next((w for w in women100 if w["persona"] == k), None) for k in personas}, open("public/data/personas.json", "w"), indent=1)
+    # SPEC §5.5 / §9.4: neighborhood = exact `nhood` value in sf-neighborhoods.geojson; jobs are invented labels
+    display = {"Linh": ("Excelsior", "Home health aide"), "Rosa": ("Mission", "Retired housekeeper"),
+               "Ana": ("Sunset/Parkside", "Dental hygienist"), "Priya": ("Mission Bay", "Lab technician")}
+    personas_out = {}
+    for k in personas:
+        w = next((w for w in women100 if w["persona"] == k), None)
+        assert w is not None, f"persona {k} not among the 100"
+        personas_out[k] = {**w, "neighborhood": display[k][0], "job": display[k][1]}
+    if os.path.exists("public/data/sf-neighborhoods.geojson"):
+        names = {f["properties"].get("nhood") for f in json.load(open("public/data/sf-neighborhoods.geojson"))["features"]}
+        bldg = ["Lakeshore", "Outer Mission", "South of Market", "Mission Bay", "Financial District/South Beach", "Mission",
+                "Hayes Valley", "Bayview Hunters Point", "Treasure Island", "Potrero Hill", "Western Addition", "Excelsior",
+                "Sunset/Parkside", "Tenderloin", "Bernal Heights", "Outer Richmond", "Inner Sunset", "Visitacion Valley"]
+        missing = [n for n in bldg + [v[0] for v in display.values()] if n not in names]
+        print(f"  geojson 'nhood' check: {len(names)} names; missing from SPEC §4.1/§5.5: {missing or 'none'}")
+        assert not missing
+    json.dump(personas_out, open("public/data/personas.json", "w"), indent=1)
     json.dump(meta, open("public/data/meta.json", "w"), indent=1)
     print(f"\n100 WOMEN: {counts}, gap {meta['gapCount']} -> public/data/women100.json")
     print(f"  qualifiers citywide (all renter households): {qualifiers:,.0f}; women-led share {meta['womenShareOfQualifiers']}")
-    print(f"  odds at 10% (141 homes): 1 in {qualifiers/141:,.0f} · at 8% (148): 1 in {qualifiers/148:,.0f}")
+    for pct_, homes_ in ((5, 117), (8, 148), (10, 141), (20, 48)):   # affordable homes from SPEC §4.3
+        print(f"  odds at {pct_}% ({homes_} homes): 1 in {round(qualifiers/homes_):,} · women-led homes ≈ {round(homes_*meta['womenShareOfQualifiers'])}")
+    print(f"  forScale: {forScale}")
+    assert sum(counts.values()) == 100 and len(women100) == 100
+    assert set(personas_out) == {"Linh", "Rosa", "Ana", "Priya"}
+    assert personas_out["Linh"]["status"] == "too_little" and personas_out["Linh"]["size"] == 3
+    assert personas_out["Priya"]["gap"] and personas_out["Ana"]["status"] == "qualifies" and personas_out["Rosa"]["status"] == "too_little"
     for k, v in personas.items():
-        print(f"  {k:6} size {v['size']} age {v['householderAge']} ${v['income']:,} rent share {v['rentBurden']} -> {v['status']}{' (gap)' if v['gap'] else ''}")
+        print(f"  {k:6} size {v['size']} kids {v['kids']} age {v['householderAge']} ${v['income']:,} rent ${v['rentMonthly']}/mo share {v['rentBurden']} -> {v['status']}{' (gap)' if v['gap'] else ''} serial {v['serial']} occp {v['occp']}")
 
 # ---------------------------------------------------------------- 3. validation (PUMS vs ACS)
 def wshare(pred, base=lambda x: True):
@@ -226,9 +267,9 @@ if exists("sf_development_pipeline.csv"):
     rd = list(csv.DictReader(open(os.path.join(RAW, "sf_development_pipeline.csv"), encoding="utf-8-sig")))
     cols = list(rd[0].keys()) if rd else []
     c_units = pick(cols, ("net", "unit"), ("prop", "unit"), ("unit",))
-    c_bmr   = pick(cols, ("bmr",), ("afford",))
+    c_bmr   = pick(cols, ("pipeline", "affordable"), ("bmr",), ("afford",))
     c_name  = pick(cols, ("name", "address"), ("address",), ("name",))
-    c_dist  = pick(cols, ("supervisor",), ("district",))
+    c_dist  = pick(cols, ("supervisor",), ("planning", "district"), ("district",))
     c_stat  = pick(cols, ("status",), ("stage",))
     print(f"\nPIPELINE columns detected: units={c_units} bmr={c_bmr} name={c_name} district={c_dist} status={c_stat}")
     print("  (if any is wrong, edit pick() calls; all columns:", ", ".join(cols[:40]), "...)")
@@ -251,8 +292,8 @@ if exists("sf_development_pipeline.csv"):
                 "hurdleYield": round(random.uniform(0.040, 0.055), 4),
                 "illustrative": ["costPerSqft", "marketRent", "hurdleYield"],
             })
-        json.dump(projects, open("public/data/projects.json", "w"), indent=1)
-        print(f"  {len(big)} pipeline projects >= 25 units; sampled 20 -> public/data/projects.json")
+        json.dump(projects, open("data/projects.json", "w"), indent=1)
+        print(f"  {len(big)} pipeline projects >= 25 units; sampled 20 -> data/projects.json")
 
 # ---------------------------------------------------------------- 5. Claude context
 lines = [f"# Who's Left Out: fact sheet for Claude (auto-built; ACS {YEAR})",
@@ -266,7 +307,10 @@ if households:
               f"- Median income, women-led: ${wmedian([(x['income'], x['weight']) for x in households if wl(x)]):,.0f}; couple-led: ${wmedian([(x['income'], x['weight']) for x in households if x['hhType']=='couple_led']):,.0f}",
               f"- Renters paying ≥30% of income on rent, women-led: {wshare(lambda x: (x['rentBurden'] or 0) >= .3, lambda x: wl(x) and x['renter'] and x['rentBurden'] is not None)*100:.0f}% vs couple-led: {wshare(lambda x: (x['rentBurden'] or 0) >= .3, lambda x: x['hhType']=='couple_led' and x['renter'] and x['rentBurden'] is not None)*100:.0f}%",
               f"- Single mothers (female householder with own kids <18): {wshare(lambda x: x['singleParent'] and x['householderSex']=='F')*100:.1f}% of households",
+              f"- Renter households (any type) whose income fits the affordable-home range: {meta['qualifiers']:,}; women-led share of them: {meta['womenShareOfQualifiers']*100:.0f}%",
               ""]
+    if meta.get("forScale"):
+        lines.insert(-1, f"- For scale (DataSF Housing Production xdht-4php): SF completed {meta['forScale']['affordableHomes']:,} affordable homes through the inclusionary program in {meta['forScale']['year']}.")
 lines += [
  "## Published facts (cite these exactly)",
  "- MOHCD 2026 income limits: 100% AMI for a 4-person household = $162,100; 80% AMI = $90,750 (1 person) / $129,700 (4 people). Effective June 1, 2026.",

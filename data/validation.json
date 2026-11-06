@@ -1,0 +1,30 @@
+[
+ {
+  "stat": "Households (count)",
+  "pums": 371929.0,
+  "acs": 371841.0,
+  "source": "B11012",
+  "diffPts": 8800.0
+ },
+ {
+  "stat": "Women-led share (female householder, no spouse/partner)",
+  "pums": 0.31459498990398704,
+  "acs": 0.3115229358785072,
+  "source": "B11012",
+  "diffPts": 0.3
+ },
+ {
+  "stat": "Renter share",
+  "pums": 0.6328600351142288,
+  "acs": 0.632730118518399,
+  "source": "B25003",
+  "diffPts": 0.0
+ },
+ {
+  "stat": "Renters paying \u226530% of income on rent",
+  "pums": 0.3876581712896769,
+  "acs": 0.3908503232222775,
+  "source": "B25070",
+  "diffPts": -0.3
+ }
+]

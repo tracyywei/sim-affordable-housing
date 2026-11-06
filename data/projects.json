@@ -1,0 +1,422 @@
+[
+ {
+  "id": "p1",
+  "name": "3333 California ST",
+  "district": "1 - Richmond",
+  "status": "PL Approved",
+  "totalUnits": 744,
+  "reportedBMR": 185.0,
+  "costPerSqft": 1155,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0481,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p2",
+  "name": "625 GILMAN AV",
+  "district": "10 - South Bayshore",
+  "status": "BP Filed",
+  "totalUnits": 156,
+  "reportedBMR": 0.0,
+  "costPerSqft": 1161,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.048,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p3",
+  "name": "785 MARKET STREET",
+  "district": "4 - Downtown",
+  "status": "PL Approved",
+  "totalUnits": 124,
+  "reportedBMR": 0.0,
+  "costPerSqft": 850,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0449,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p4",
+  "name": "1979 MISSION ST",
+  "district": "8 - Mission",
+  "status": "PL Filed",
+  "totalUnits": 246,
+  "reportedBMR": 246.0,
+  "costPerSqft": 858,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0539,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p5",
+  "name": "50 8TH STREET",
+  "district": "4 - Downtown",
+  "status": "PL Filed",
+  "totalUnits": 66,
+  "reportedBMR": 66.0,
+  "costPerSqft": 1201,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0525,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p6",
+  "name": "8 22ND ST",
+  "district": "9 - South of Market",
+  "status": "BP Approved",
+  "totalUnits": 275,
+  "reportedBMR": 0.0,
+  "costPerSqft": 973,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0409,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p7",
+  "name": "889 LA SALLE AV",
+  "district": "10 - South Bayshore",
+  "status": "Construction",
+  "totalUnits": 40,
+  "reportedBMR": 7.0,
+  "costPerSqft": 1201,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0542,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p8",
+  "name": "3601 LAWTON ST",
+  "district": "15 - Outer Sunset",
+  "status": "PL Approved",
+  "totalUnits": 46,
+  "reportedBMR": 10.0,
+  "costPerSqft": 884,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0473,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p9",
+  "name": "1196 COLUMBUS AVE/2568 and 2588 JONES STREET",
+  "district": "3 - Northeast",
+  "status": "PL Approved",
+  "totalUnits": 56,
+  "reportedBMR": 10.0,
+  "costPerSqft": 878,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0514,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p10",
+  "name": "5425 MISSION ST",
+  "district": "12 - South Central",
+  "status": "PL Approved",
+  "totalUnits": 50,
+  "reportedBMR": 6.0,
+  "costPerSqft": 1156,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0419,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p11",
+  "name": "180 HAWTHORNE STREET",
+  "district": "9 - South of Market",
+  "status": "PL Approved",
+  "totalUnits": 320,
+  "reportedBMR": 48.0,
+  "costPerSqft": 1040,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0482,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p12",
+  "name": "Visitacion Valley / Schlage Lock",
+  "district": "10 - South Bayshore",
+  "status": "PL Approved",
+  "totalUnits": 1123,
+  "reportedBMR": 252.0,
+  "costPerSqft": 956,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0531,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p13",
+  "name": "1338 MISSION ST",
+  "district": "4 - Downtown",
+  "status": "PL Filed",
+  "totalUnits": 287,
+  "reportedBMR": 44.0,
+  "costPerSqft": 1019,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0432,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p14",
+  "name": "2800 GEARY BLVD",
+  "district": "1 - Richmond",
+  "status": "BP Filed",
+  "totalUnits": 42,
+  "reportedBMR": 9.0,
+  "costPerSqft": 1066,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0509,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p15",
+  "name": "Parkmerced",
+  "district": "13 - Ingleside",
+  "status": "PL Approved",
+  "totalUnits": 3776,
+  "reportedBMR": 852.0,
+  "costPerSqft": 930,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0447,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p16",
+  "name": "2045 SUTTER ST_1950 POST ST",
+  "district": "5 - Western Addition",
+  "status": "BP Filed",
+  "totalUnits": 28,
+  "reportedBMR": 29.0,
+  "costPerSqft": 1248,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0497,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p17",
+  "name": "450 OFARRELL ST",
+  "district": "4 - Downtown",
+  "status": "PL Approved",
+  "totalUnits": 261,
+  "reportedBMR": 23.0,
+  "costPerSqft": 1025,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0478,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p18",
+  "name": "Hunters Point Shipyard I",
+  "district": "10 - South Bayshore",
+  "status": "PL Approved",
+  "totalUnits": 33,
+  "reportedBMR": 6.0,
+  "costPerSqft": 898,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0434,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p19",
+  "name": "955 POST ST",
+  "district": "4 - Downtown",
+  "status": "BP Filed",
+  "totalUnits": 69,
+  "reportedBMR": 17.0,
+  "costPerSqft": 985,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0488,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ },
+ {
+  "id": "p20",
+  "name": "Mission Bay North",
+  "district": "9 - South of Market",
+  "status": "PL Approved",
+  "totalUnits": 283,
+  "reportedBMR": 168.0,
+  "costPerSqft": 942,
+  "marketRent": {
+   "0": 2900,
+   "1": 3600,
+   "2": 4800,
+   "3": 6000
+  },
+  "hurdleYield": 0.0433,
+  "illustrative": [
+   "costPerSqft",
+   "marketRent",
+   "hurdleYield"
+  ]
+ }
+]
