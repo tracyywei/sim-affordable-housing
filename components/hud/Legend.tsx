@@ -1,5 +1,5 @@
 // Owner: Agent E. Legend: three groups (icon · label · share), odds under Eligible, chips, group button.
-import { chrome, figureScale, groupRow, legendOddsLine, legendTitle, scaleLine } from '@/lib/copy';
+import { chrome, figureScale, groupRow, legendTitle, scaleLine } from '@/lib/copy';
 import { STATUSES, type LegendProps, type Meta, type Status } from '@/lib/types';
 import PersonaChips from './PersonaChips';
 
@@ -15,7 +15,7 @@ function FigureIcon({ status }: { status: Status }) {
 }
 
 /** `meta` is extra to LegendProps (needed for the figure scale). */
-export default function Legend({ counts, result, lineup, onToggleLineup, personas, onPersona, meta }: LegendProps & { meta?: Meta }) {
+export default function Legend({ counts, lineup, onToggleLineup, personas, onPersona, meta }: LegendProps & { meta?: Meta }) {
   const total = STATUSES.reduce((s, k) => s + counts[k], 0);
   const scale = meta ? figureScale(meta) : 1;
   return (
@@ -30,7 +30,6 @@ export default function Legend({ counts, result, lineup, onToggleLineup, persona
               <FigureIcon status={s} />
               <span>{row.label}</span>
               <span className="count" data-legend-count={s}>{row.pct}</span>
-              {s === 'qualifies' && <span className="legend-sub" data-hud="legend-odds">{legendOddsLine(result)}</span>}
             </li>
           );
         })}

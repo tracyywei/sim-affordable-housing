@@ -235,7 +235,19 @@ export function leftOutCard(meta: Meta): RailCard {
   };
 }
 
-export const noBuildingsBanner = 'At this level no building gets built (simplified model).';
+/** (3) "Odds for eligible households" · "1 in 236" · "of getting one of these affordable homes" */
+export function oddsRailCard(result: SliderResult): RailCard {
+  if (result.oddsN == null) {
+    return { label: 'Odds for eligible households', big: 'None', sub: 'no affordable homes are required at 0%' };
+  }
+  return {
+    label: 'Odds for eligible households',
+    big: `1 in ${fmtInt(result.oddsN)}`,
+    sub: 'of getting one of these affordable homes',
+  };
+}
+
+export const noBuildingsBanner ='At this level no building gets built (simplified model).';
 
 /* ------------------------------------------------------------------ "What 'affordable' means here" */
 
