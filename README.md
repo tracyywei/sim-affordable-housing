@@ -1,4 +1,6 @@
-# Who's Left Out
+# HerHousing
+
+Try it here: https://sim-affordable-housing.vercel.app/
 
 A map dashboard of San Francisco with one slider: how much affordable housing new buildings must include, and which women those homes actually reach. Built for the Code with Claude: Women in AI Hackathon (Nov 6, 2026).
 
