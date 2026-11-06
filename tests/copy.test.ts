@@ -134,9 +134,9 @@ describe('templates fill in from the fixture', () => {
     expect(copy.buildingPopover(folsom, false, 10, 0).body).toContain(`It gets built up to ${folsom.breakEven}%.`);
     expect(copy.buildingPopover(folsom, true, 3, 6).body).toBe(`6 of its ${folsom.units} apartments are affordable (made-up building, simplified model).`);
     expect(copy.affordableMeansCard(meta).text).toBe(
-      'Rent for an affordable studio is set at $2,269/month (a fixed city limit, not an average). ' +
-        'To qualify, a person living alone must earn $54,450–$90,750. ' +
-        'A household of 3 (for example, a parent with 2 children) must earn $62,250–$116,700 for a 1-bedroom.',
+      'Studio rent: $2,269/month (city-set). ' +
+        'Eligible if earning $54,450–$90,750 (living alone) or $62,250–$116,700 (family of 3). ' +
+        "Women who earn less than the eligible salary can't afford affordable housing.",
     );
   });
   test('drawer: synthetic wording + forScale only when present', () => {

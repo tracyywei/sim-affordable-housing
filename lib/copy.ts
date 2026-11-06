@@ -271,20 +271,18 @@ export function affordableMeansCard(meta: Meta): AffordableMeans {
   const famLimit = meta.limit[String(fam)];
   const sentences: Seg[][] = [
     [
-      { text: 'Rent for an affordable studio is set at ' },
+      { text: 'Studio rent: ' },
       { text: `${fmtMoney(studioRent)}/month`, bold: true },
-      { text: ' (a fixed city limit, not an average).' },
+      { text: ' (city-set).' },
     ],
     [
-      { text: 'To qualify, a person living alone must earn ' },
+      { text: 'Eligible if earning ' },
       { text: `${fmtMoney(singleFloor)}–${fmtMoney(singleLimit)}`, bold: true },
-      { text: '.' },
-    ],
-    [
-      { text: `A household of ${fam} (for example, a parent with ${fam - 1} children) must earn ` },
+      { text: ' (living alone) or ' },
       { text: `${fmtMoney(famFloor)}–${fmtMoney(famLimit)}`, bold: true },
-      { text: ` for a ${homeName(famBr)}.` },
+      { text: ` (family of ${fam}).` },
     ],
+    [{ text: "Women who earn less than the eligible salary can't afford affordable housing." }],
   ];
   return {
     title: 'What "affordable" means',
