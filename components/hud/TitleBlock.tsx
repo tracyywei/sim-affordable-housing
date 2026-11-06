@@ -1,16 +1,14 @@
-// Owner: Agent E. Title, subtitle and the always-visible "Simplified model" pill (opens the ⓘ drawer).
-import { simplifiedModelPill, chrome } from '@/lib/copy';
+// Owner: Agent E. The page question + the always-visible "Simplified model" label (static, not a button).
+import { chrome, simplifiedModelPill } from '@/lib/copy';
 import type { TitleBlockProps } from '@/lib/types';
-import { ui } from './text';
 
-export default function TitleBlock({ onOpenInfo }: TitleBlockProps) {
+/** No info drawer any more; `onOpenInfo` is accepted and ignored so older callers still compile. */
+export default function TitleBlock(_props: Partial<TitleBlockProps> = {}) {
+  void _props;
   return (
     <header className="title-block">
-      <h1>{ui('title')}</h1>
-      <p>{ui('subtitle')}</p>
-      <button type="button" className="pill hud-btn model-pill" onClick={onOpenInfo} aria-haspopup="dialog" title={chrome.info} data-hud="info">
-        <span aria-hidden="true">ⓘ </span>{simplifiedModelPill}
-      </button>
+      <h1>{chrome.subtitle}</h1>
+      <p className="model-label" data-hud="model-label">{simplifiedModelPill}</p>
     </header>
   );
 }

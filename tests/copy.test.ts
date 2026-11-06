@@ -24,12 +24,14 @@ function allScreenStrings(): string[] {
   const nWomen = women.length;
   out.push(copy.sliderLabel, copy.noBuildingsBanner, copy.claudeNapPrefix, copy.claudeLabel, copy.simplifiedModelPill,
     copy.basedOnRealRecord, copy.basedOnSyntheticRecord, copy.recordNote(meta), copy.stillCaption(nWomen),
-    copy.legendTitle(nWomen), copy.legendGapLine(meta.gapCount), copy.lineupLabels(meta.counts), copy.affordableMeansCard(meta));
+    copy.legendTitle(nWomen), copy.legendGapLine(meta.gapCount), copy.lineupLabels(meta.counts), copy.affordableMeansCard(meta),
+    copy.scaleLine(100), copy.legendGapLine(meta.gapCount, 100), copy.tradeoffCaption(), copy.leftOutCard({ ...meta, scale: 100 }));
+  for (const st of ['too_much', 'too_little', 'qualifies'] as const) out.push(copy.groupRow(st, meta.counts[st], nWomen, 100));
   for (const v of Object.values(copy.chrome)) out.push(typeof v === 'function' ? v(START_PCT) : v);
   for (const s of ['too_much', 'too_little', 'qualifies'] as const) out.push(copy.statusLabel(s), copy.statusLong(s));
   for (const r of results) {
     out.push(copy.sliderSentence(r.pct), copy.pctPill(r.pct), copy.buildingsCard(r, base, total), copy.affordableCard(r, base),
-      copy.oddsCard(r, base), copy.legendOddsLine(r), copy.lineupOddsLine(r), copy.explainTemplate(req(r.pct)));
+      copy.oddsCard(r, base), copy.legendOddsLine(r), copy.newHomesCard(r, total), copy.affordableHomesCard(r), copy.lineupOddsLine(r), copy.explainTemplate(req(r.pct)));
     for (const p of Object.values(personas)) out.push(copy.personaLines(p, r, meta));
     BUILDINGS.forEach((b, i) => out.push(copy.buildingPopover(b, r.built[i], r.pct, Math.round((b.units * r.pct) / 100))));
   }
@@ -83,35 +85,59 @@ describe('templates fill in from the fixture', () => {
     expect(copy.buildingsCard(base, base, total).change).toBeNull();
     expect(copy.oddsCard(results[0], base).big).toBe('No affordable homes required.');
   });
-  test('Linh (too little) matches SPEC §9.4', () => {
-    const l = copy.personaLines(personas.Linh, base, meta);
-    expect(l.header).toBe('38 / Excelsior / Home health aide');
-    expect(l.household).toBe('Raising 2 kids · $52K a year');
-    expect(l.rent).toBe('Rent takes 55% of her income');
-    expect(l.statusChip).toBe('Earns too little to qualify');
-    expect(l.body).toBe("Linh would need to earn $62,250 for an affordable 1-bedroom ($2,594/month). That's $10,250 more than she makes.");
-  });
-  test('Ana (qualifies) quotes the odds from these buildings', () => {
-    expect(copy.personaLines(personas.Ana, base, meta).body).toBe(
-      `She can apply. With ${copy.fmtInt(base.oddsN!)} households competing for every home, her odds are 1 in ${copy.fmtInt(base.oddsN!)} from these ${total} buildings.`,
+  test('Linh (below the minimum income) explains why low income does not qualify', () => {
+    const p = personas.Linh;
+    const l = copy.personaLines(p, base, meta);
+    expect(l.header).toBe(`${p.age} / ${p.neighborhood} / ${p.job}`);
+    expect(l.household).toBe(`Raising ${p.kids} kids · ${copy.fmtK(p.income)} a year`);
+    expect(l.statusChip).toBe('Below the minimum income');
+    expect(l.body).toBe(
+      `Affordable units still charge rent: ${copy.fmtMoney(meta.rent[String(p.homeBedrooms)])}/month for a ${copy.homeName(p.homeBedrooms)}. ` +
+        `Applicants must earn at least twice the yearly rent, ${copy.fmtMoney(p.floor)}. Linh earns ${copy.fmtMoney(p.income)}, which is ${copy.fmtMoney(p.floor - p.income)} short.`,
     );
   });
-  test('Priya (gap) says the rule can\'t help her', () => {
+  test('Ana (eligible) gets the odds', () => {
+    const n = copy.fmtInt(base.oddsN!);
+    expect(copy.personaLines(personas.Ana, base, meta).body).toBe(`Eligible. With ${n} eligible households for every affordable home, her odds are 1 in ${n}.`);
+    expect(copy.personaLines(personas.Ana, results[0], meta).body).toBe('Eligible, but at this setting there are no affordable homes to apply for.');
+  });
+  test('Priya (above the limit, rent-burdened)', () => {
     const p = personas.Priya;
     expect(copy.personaLines(p, base, meta).body).toBe(
-      `She earns ${copy.fmtMoney(p.income - p.limit)} over the limit for her household size, but rent still takes ${Math.round(p.rentShare! * 100)}% of her income. This rule can't help her.`,
+      `Earns ${copy.fmtMoney(p.income - p.limit)} above the income limit for ${p.size} ${p.size === 1 ? 'person' : 'people'}, yet rent takes ${Math.round(p.rentShare! * 100)}% of her income.`,
     );
   });
-  test('tooltip, popover, affordable card, gap line', () => {
+  test('legend: title, scale, group rows, gap line, odds', () => {
+    expect(copy.legendTitle()).toBe('Women-led renter households in SF');
+    expect(copy.scaleLine(100)).toBe('Each figure = 100 households');
+    expect(copy.groupRow('too_much', 318, 740, 100)).toEqual({ label: 'Above the income limit', pct: '43%', households: '≈31,800 households' });
+    expect(copy.legendGapLine(9, 100)).toBe('≈900 still spend 30%+ of income on rent');
+    expect(copy.legendOddsLine(base)).toBe(`Odds: 1 in ${copy.fmtInt(base.oddsN!)}`);
+    expect(copy.legendOddsLine(results[0])).toBe('No affordable homes');
+  });
+  test('right rail cards', () => {
+    expect(copy.newHomesCard(base, total)).toEqual({
+      label: 'New homes built', big: copy.fmtInt(base.newHomes), sub: `in ${base.buildingsBuilt} of ${total} proposed buildings`,
+    });
+    expect(copy.affordableHomesCard(base)).toEqual({
+      label: 'Affordable homes', big: copy.fmtInt(base.affordableHomes), sub: `of the ${copy.fmtInt(base.newHomes)} new homes`,
+    });
+    const scaled: Meta = { ...meta, scale: 100, counts: { too_much: 318, too_little: 41, qualifies: 381 } };
+    expect(copy.leftOutCard(scaled)).toEqual({
+      label: 'Low-income women left out', big: '≈4,100', sub: 'women-led households earn below the minimum income at every setting',
+    });
+  });
+  test('tooltip, popover, affordable card', () => {
     const w = women.find((x) => x.size === 2)!;
     expect(copy.womanTooltip(w)).toBe(`Woman, 2 people at home, earns ${copy.fmtK(w.income)} · ${copy.statusLabel(w.status)}`);
     const folsom = BUILDINGS[2];
     expect(copy.buildingPopover(folsom, false, 10, 0).body).toContain(`It gets built up to ${folsom.breakEven}%.`);
     expect(copy.buildingPopover(folsom, true, 3, 6).body).toBe(`6 of its ${folsom.units} apartments are affordable (made-up building, simplified model).`);
     expect(copy.affordableMeansCard(meta).text).toBe(
-      'An affordable studio costs $2,269 a month. To get one, a woman living alone must earn between $54,450 and $90,750. Family of 3: $62,250–$116,700 for a 1-bedroom.',
+      'Rent for an affordable studio is set at $2,269/month (a fixed city limit, not an average). ' +
+        'To qualify, a person living alone must earn $54,450–$90,750. ' +
+        'A household of 3 (for example, a parent with 2 children) must earn $62,250–$116,700 for a 1-bedroom.',
     );
-    expect(copy.legendGapLine(meta.gapCount)).toBe(`${meta.gapCount} of them still spend 30%+ of income on rent`);
   });
   test('drawer: synthetic wording + forScale only when present', () => {
     expect(copy.drawerCopy.womenNote({ synthetic: true })).toContain('synthetic, based on Census statistics');

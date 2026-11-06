@@ -107,6 +107,8 @@ if [ "$ONLY" != "census" ]; then
 echo "== 3b. Map: SF Analysis Neighborhoods (GeoJSON)"
 # (p5b7-5n3h's export returns an empty FeatureCollection; j2bu-swwd has the 41 polygons, name property "nhood")
 get sf_neighborhoods.geojson "https://data.sfgov.org/api/geospatial/j2bu-swwd?method=export&format=GeoJSON"
+# 2020 census tracts assigned to Analysis Neighborhoods (joined with tract_to_puma_2020.txt -> meta.pumaNeighborhoods)
+get sf_tracts_neighborhoods_2020.csv "https://data.sfgov.org/api/views/sevw-6tgi/rows.csv?accessType=DOWNLOAD"
 echo "   then simplify:  npx mapshaper data/raw/sf_neighborhoods.geojson -simplify 15% keep-shapes -o precision=0.00001 public/data/sf-neighborhoods.geojson"
 
 echo "== 4. Policy reference PDFs (for humans + Claude context)"

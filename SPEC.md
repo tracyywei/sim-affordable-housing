@@ -94,7 +94,7 @@ Each building has a size and a **break-even %**, the highest share it can set as
 ### 4.2 Rules
 - `built(b, p) = breakEven_b ≥ p`
 - `affordableHomes(p) = Σ over built buildings of Math.round(units × p / 100)`
-- In the UI, each building's teal windows = `round(20 × p / 100)` out of 20.
+- In the UI, each window stands for 10 apartments (`windowCount = round(units / 10)`). A built building's teal windows = `round(affordable / 10)` for its own affordable apartments (`round(units × p / 100)`), at least 1 when it has any.
 
 ### 4.3 Checked values (the demo depends on these)
 | % | Buildings built | New homes | Affordable |
@@ -282,7 +282,7 @@ Status is never shown by color alone. Check the palette with the dataviz skill's
 - **Camera:** `d3-zoom`, 1–8×, pan clamped to SF. On load, 0.85× → 1× over 1.5 s (the only intro). Fly-to is 750 ms to 4×, then the popover opens. ⟲ or Escape resets. Figures counter-scale (`1/k`, growing slightly up to 1.6×) and use `vector-effect: non-scaling-stroke`.
 - **Placement** (`lib/layout.ts`, seeded): women go into residential neighborhoods (skip Golden Gate Park, Presidio, Lincoln Park, McLaren Park) via rejection sampling, at least 14 px apart. Buildings use the neighborhoods in §4.1. Personas are pinned per §5.5.
 - **Person:** about 18 px tall: head r=3.2, body 7×9 rect in the status color, ink legs, shadow. Seeded height ±10%, 3 hair shapes. Personas get a pink ring and a name tag. Hover shows a tooltip; click flies to her and opens a small popover.
-- **Building:** small (<75 units) 28 px, medium 40 px, large (>175) 54 px tall, 22 px wide. Facade `#FFF8EC` with a 4×5 window grid: teal = `round(20 × p/100)` filled from the bottom, the rest `--lit`. Not built: dashed outline at 35% with a "✕ not built" tag on hover.
+- **Building:** 22 px wide; height grows with its floors of windows (25 apartments ≈ 14 px, 300 ≈ 56 px). Facade `#FFF8EC` with one window per 10 apartments, 4 per floor (a partial top floor is centered): teal windows per §4.2 filled from the bottom, the rest `--lit`. Not built: dashed outline at 35% with a "✕ not built" tag on hover.
 
 ### 9.4 Popovers
 **Persona** (pink card, pointer toward her figure). The numbers come from her PUMS record, and the text is a template:

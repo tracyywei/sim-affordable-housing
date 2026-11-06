@@ -3,9 +3,10 @@ import { describe, expect, test } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import {
-  BUILDINGS, F, MAX_PCT, TOTAL_BUILDINGS, floor, homeBedrooms, limit, pyRound, rent, rentRounded, round50, windowsTeal,
+  BUILDINGS, F, MAX_PCT, TOTAL_BUILDINGS, floor, homeBedrooms, limit, pyRound, rent, rentRounded, round50, windowsTeal, windowCount, affordableUnits,
 } from '@/lib/constants';
 import { computeResults, precompute, run } from '@/lib/sim';
+import { buildingHeight } from '@/lib/layout';
 import type { Meta, Status, Woman } from '@/lib/types';
 
 /** Real data file if the pipeline has produced it, else the fixture. */
@@ -73,11 +74,14 @@ describe('SPEC §11', () => {
     expect(results.filter((r) => r.affordableHomes === max).map((r) => r.pct)).toEqual([8]);
   });
 
-  test(`4. women100.json status counts sum to 100, match meta.counts, and agree with TS limit/floor (${path.basename(path.dirname(womenFile))})`, () => {
-    expect(women.length).toBe(100);
+  test(`4. women100.json status counts sum to women.length (N), match meta.counts, and agree with TS limit/floor (${path.basename(path.dirname(womenFile))})`, () => {
+    // N = women.length (was 100; now ~740 at 1 figure = meta.scale households). Nothing assumes 100.
+    expect(women.length).toBeGreaterThan(0);
     const counts: Record<Status, number> = { too_much: 0, too_little: 0, qualifies: 0 };
     for (const w of women) counts[w.status] += 1;
-    expect(counts.too_much + counts.too_little + counts.qualifies).toBe(100);
+    expect(counts.too_much + counts.too_little + counts.qualifies).toBe(women.length);
+    expect(meta.counts.too_much + meta.counts.too_little + meta.counts.qualifies).toBe(women.length);
+    expect(new Set(women.map((w) => w.id)).size).toBe(women.length);
     expect(counts).toEqual(meta.counts);
     expect(women.filter((w) => w.gap).length).toBe(meta.gapCount);
     for (const w of women) {
@@ -125,7 +129,54 @@ describe('shape', () => {
     const app = precompute({ women, personas: {} as never, meta, geo: null });
     expect(app.sweetSpot).toBe(8);
     expect(app.results).toEqual(results);
-    expect(windowsTeal(10)).toBe(2);
-    expect(windowsTeal(25)).toBe(5);
+  });
+});
+
+describe('building windows scale with size', () => {
+  const pcts = Array.from({ length: MAX_PCT + 1 }, (_, p) => p);
+
+  test('one window per 10 apartments', () => {
+    expect(windowCount(300)).toBe(30);
+    expect(windowCount(120)).toBe(12);
+    expect(windowCount(25)).toBe(3);
+    expect(windowCount(1)).toBe(1);
+  });
+
+  test('teal windows follow each building\'s own affordable apartments', () => {
+    // at 10%: 300 apts -> 30 affordable -> 3 teal; 25 apts -> 3 affordable -> 1 teal
+    expect(windowsTeal(300, 10)).toBe(3);
+    expect(windowsTeal(120, 10)).toBe(1);
+    expect(windowsTeal(25, 10)).toBe(1);
+    expect(windowsTeal(250, 25)).toBe(6);
+    expect(windowsTeal(300, 0)).toBe(0);
+    expect(new Set(BUILDINGS.map((b) => windowsTeal(b.units, 25))).size).toBeGreaterThan(1);
+  });
+
+  test('every building, every %: 0 only when nothing is affordable, never more than its windows', () => {
+    for (const b of BUILDINGS) {
+      for (const p of pcts) {
+        const t = windowsTeal(b.units, p);
+        expect(t === 0).toBe(affordableUnits(b.units, p) === 0);
+        expect(t).toBeLessThanOrEqual(windowCount(b.units));
+        if (p > 0) expect(t).toBeGreaterThanOrEqual(windowsTeal(b.units, p - 1));
+      }
+    }
+  });
+
+  test('bigger buildings are never shorter and never have fewer teal windows', () => {
+    const bySize = [...BUILDINGS].sort((a, b) => a.units - b.units);
+    for (let i = 1; i < bySize.length; i++) {
+      expect(buildingHeight(bySize[i].units)).toBeGreaterThanOrEqual(buildingHeight(bySize[i - 1].units));
+      for (const p of pcts) expect(windowsTeal(bySize[i].units, p)).toBeGreaterThanOrEqual(windowsTeal(bySize[i - 1].units, p));
+    }
+    expect(buildingHeight(300)).toBeGreaterThan(buildingHeight(25));
+  });
+
+  test('per-building affordable apartments add up to the scoreboard total', () => {
+    for (const p of pcts) {
+      const r = run(p, meta);
+      const sum = BUILDINGS.reduce((s, b, i) => s + (r.built[i] ? affordableUnits(b.units, p) : 0), 0);
+      expect(sum).toBe(r.affordableHomes);
+    }
   });
 });

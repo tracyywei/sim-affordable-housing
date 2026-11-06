@@ -1,10 +1,10 @@
 {
  "counts": {
-  "too_much": 43,
-  "too_little": 41,
-  "qualifies": 16
+  "too_much": 349,
+  "too_little": 338,
+  "qualifies": 128
  },
- "gapCount": 9,
+ "gapCount": 73,
  "qualifiers": 33260,
  "womenShareOfQualifiers": 0.3834,
  "rent": {
@@ -32,5 +32,72 @@
  "forScale": {
   "affordableHomes": 1564,
   "year": 2025
+ },
+ "scale": 100,
+ "womenRenterHouseholds": 81512,
+ "pumaNeighborhoods": {
+  "07507": [
+   "Bayview Hunters Point",
+   "Excelsior",
+   "McLaren Park",
+   "Portola",
+   "Visitacion Valley"
+  ],
+  "07508": [
+   "Golden Gate Park",
+   "Inner Richmond",
+   "Lincoln Park",
+   "Lone Mountain/USF",
+   "Outer Richmond",
+   "Presidio",
+   "Presidio Heights",
+   "Seacliff"
+  ],
+  "07509": [
+   "Chinatown",
+   "Financial District/South Beach",
+   "Nob Hill",
+   "North Beach",
+   "Russian Hill",
+   "Tenderloin",
+   "Treasure Island"
+  ],
+  "07510": [
+   "Financial District/South Beach",
+   "Mission",
+   "Mission Bay",
+   "Potrero Hill",
+   "South of Market"
+  ],
+  "07511": [
+   "Bernal Heights",
+   "Castro/Upper Market",
+   "Glen Park",
+   "Haight Ashbury",
+   "Mission",
+   "Noe Valley",
+   "Twin Peaks"
+  ],
+  "07512": [
+   "Inner Sunset",
+   "Sunset/Parkside",
+   "Twin Peaks",
+   "West of Twin Peaks"
+  ],
+  "07513": [
+   "Lakeshore",
+   "Oceanview/Merced/Ingleside",
+   "Outer Mission",
+   "Sunset/Parkside",
+   "West of Twin Peaks"
+  ],
+  "07514": [
+   "Haight Ashbury",
+   "Hayes Valley",
+   "Japantown",
+   "Marina",
+   "Pacific Heights",
+   "Western Addition"
+  ]
  }
 }

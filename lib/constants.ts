@@ -76,7 +76,25 @@ export function floor(br: number): number {
   return round50(2 * 12 * rent(br));
 }
 
-/** Teal windows out of 20 on a built building (SPEC §4.2). */
-export function windowsTeal(pct: number): number {
-  return Math.round((20 * pct) / 100);
+/** Affordable apartments in one built building at `pct` (the per-building term of run()'s sum). */
+export function affordableUnits(units: number, pct: number): number {
+  return Math.round((units * pct) / 100);
+}
+
+/** On the map each window stands for this many apartments, so bigger buildings have more windows. */
+export const UNITS_PER_WINDOW = 10;
+
+/** Windows drawn on a building: one per UNITS_PER_WINDOW apartments, at least 1. */
+export function windowCount(units: number): number {
+  return Math.max(1, Math.round(units / UNITS_PER_WINDOW));
+}
+
+/**
+ * Teal windows on a built building (SPEC §4.2): its affordable apartments / UNITS_PER_WINDOW, rounded,
+ * but at least 1 whenever it has any affordable apartment, and never more than its windows.
+ */
+export function windowsTeal(units: number, pct: number): number {
+  const affordable = affordableUnits(units, pct);
+  if (affordable === 0) return 0;
+  return Math.min(windowCount(units), Math.max(1, Math.round(affordable / UNITS_PER_WINDOW)));
 }

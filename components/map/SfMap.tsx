@@ -7,8 +7,8 @@ import 'd3-transition';
 import { zoom as d3zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom';
 import { easeCubicInOut, easeCubicOut } from 'd3-ease';
 import type { AppData, CameraHandle, Persona, SfMapProps, SliderResult } from '@/lib/types';
-import { BUILDINGS, windowsTeal } from '@/lib/constants';
-import { computeLayout, computeLineup } from '@/lib/layout';
+import { BUILDINGS, affordableUnits, windowsTeal } from '@/lib/constants';
+import { computeLayout, computeLineup, figureSize } from '@/lib/layout';
 import {
   FLY_MS, INTRO_MS, MAX_K, MIN_K, RESET_MS, figureScale, flyTransform, introTransform, translateExtent,
 } from '@/lib/camera';
@@ -40,6 +40,7 @@ export default function SfMap(props: SfMapProps) {
   const lineupRef = useRef(lineup);
   const reducedRef = useRef(reducedMotion);
   const onSelectRef = useRef(onSelect);
+  const hoverRef = useRef<string | null>(null);
   const selectedRef = useRef(selected);
   useEffect(() => {
     lineupRef.current = lineup;
@@ -52,7 +53,6 @@ export default function SfMap(props: SfMapProps) {
   const [t, setT] = useState<ZoomTransform>(zoomIdentity);
   const [flying, setFlying] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
-  const [walking, setWalking] = useState(false);
 
   /* ---------------------------------------------------------------- size */
   useEffect(() => {
@@ -71,15 +71,18 @@ export default function SfMap(props: SfMapProps) {
 
   /* ---------------------------------------------------------------- layout (seeded; recomputed on resize) */
   const layout = useMemo(
-    () => (size ? computeLayout(data.geo, data.women, data.personas, BUILDINGS, size.w, size.h) : null),
-    [data.geo, data.women, data.personas, size],
+    () => (size ? computeLayout(data.geo, data.women, data.personas, BUILDINGS, size.w, size.h, data.meta.pumaNeighborhoods) : null),
+    [data.geo, data.women, data.personas, data.meta.pumaNeighborhoods, size],
   );
   const lineupPos = useMemo(() => (size ? computeLineup(data.women, size.w, size.h) : null), [data.women, size]);
   const personaById = useMemo(() => {
     const m = new Map<string, Persona>();
-    for (const p of Object.values(data.personas)) m.set(p.id, p);
+    for (const w of data.women) {
+      const p = w.persona ? data.personas[w.persona] : undefined;
+      if (p) m.set(w.id, { ...p, ...w, persona: p.persona, neighborhood: p.neighborhood, job: p.job });
+    }
     return m;
-  }, [data.personas]);
+  }, [data.personas, data.women]);
   const womanById = useMemo(() => new Map(data.women.map((w) => [w.id, w])), [data.women]);
 
   const result: SliderResult | undefined = data.results[pct] ?? data.results[0];
@@ -95,7 +98,8 @@ export default function SfMap(props: SfMapProps) {
     }
     svgRef.current?.classList.toggle('zoomed', tr.k > 2);
     wrapRef.current?.setAttribute('data-zoom-k', tr.k.toFixed(2));
-    setT(tr);
+    // ~740 figures: only re-render per frame when a popover/tooltip needs the live transform
+    if (selectedRef.current || hoverRef.current) setT(tr);
   }, []);
 
   const transitionTo = useCallback((target: ZoomTransform, ms: number, after?: () => void) => {
@@ -118,7 +122,8 @@ export default function SfMap(props: SfMapProps) {
       .extent([[0, 0], [size.w, size.h]])
       .translateExtent(translateExtent(size.w, size.h))
       .filter((ev: MouseEvent & WheelEvent) => !lineupRef.current && (!ev.ctrlKey || ev.type === 'wheel') && !ev.button)
-      .on('zoom', (ev: { transform: ZoomTransform }) => apply(ev.transform));
+      .on('zoom', (ev: { transform: ZoomTransform }) => apply(ev.transform))
+      .on('end', (ev: { transform: ZoomTransform }) => setT(ev.transform));
     zoomRef.current = z;
     const sel = select(svg);
     sel.call(z);
@@ -191,17 +196,11 @@ export default function SfMap(props: SfMapProps) {
   useEffect(() => {
     if (prevLineup.current === lineup) return;
     prevLineup.current = lineup;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (!reducedRef.current) {
-      setWalking(true);
-      timer = setTimeout(() => setWalking(false), 800 + STAGGER_MS * data.women.length + 100);
-    }
     if (lineup) {
       if (selectedRef.current) onSelectRef.current(null);
       transitionTo(zoomIdentity, reducedRef.current ? 0 : 400);
     }
-    return () => { if (timer) clearTimeout(timer); };
-  }, [lineup, transitionTo, data.women.length]);
+  }, [lineup, transitionTo]);
 
   /* ---------------------------------------------------------------- interactions */
   const activateWoman = useCallback((id: string) => {
@@ -217,18 +216,22 @@ export default function SfMap(props: SfMapProps) {
     flyToBuilding(index);
   }, [flyToBuilding]);
 
-  const onHover = useCallback((id: string | null) => setHover(id), []);
+  const onHover = useCallback((id: string | null) => {
+    hoverRef.current = id;
+    setT(tRef.current);
+    setHover(id);
+  }, []);
 
   /* ---------------------------------------------------------------- render */
-  const teal = windowsTeal(pct);
   const anySelected = selected != null && !lineup;
 
   const buildingCopy = useMemo(() => BUILDINGS.map((b, i) => {
     const built = result?.built[i] ?? false;
-    return buildingPopover(b, built, pct, built ? Math.round((b.units * pct) / 100) : 0);
+    return buildingPopover(b, built, pct, built ? affordableUnits(b.units, pct) : 0);
   }), [result, pct]);
 
-  const selBuildingPt = selected?.kind === 'building' && !lineup ? layout?.buildings[selected.index] : undefined;
+  const figSize = figureSize(data.women.length);
+  const stagger = Math.min(STAGGER_MS, 400 / Math.max(1, data.women.length));
   const womenNodes = layout ? data.women.map((w, i) => {
     const spot = layout.women[w.id];
     const pos = lineup && lineupPos ? lineupPos.spots[w.id] ?? spot : spot;
@@ -243,13 +246,11 @@ export default function SfMap(props: SfMapProps) {
         persona={persona ? persona.persona : null}
         hair={spot.hair}
         height={spot.height}
-        bobDelay={spot.bobDelay}
-        delayMs={reducedMotion ? 0 : i * STAGGER_MS}
+        size={figSize}
+        delayMs={reducedMotion ? 0 : Math.round(i * stagger)}
         dim={anySelected && !(selected?.kind === 'woman' && selected.id === w.id)}
         selected={!lineup && selected?.kind === 'woman' && selected.id === w.id}
         label={persona ? `${persona.persona}: ${personaHeader(persona)}` : ''}
-        faceLeft={selBuildingPt ? selBuildingPt.x < spot.x : false}
-        annotation={persona?.persona === 'Linh' && !lineup && !anySelected ? chrome.thisIsLinh : undefined}
         onActivate={activateWoman}
         onHover={onHover}
       />
@@ -340,7 +341,7 @@ export default function SfMap(props: SfMapProps) {
                     x={pt.x}
                     y={pt.y}
                     built={result?.built[i] ?? false}
-                    teal={teal}
+                    teal={windowsTeal(b.units, pct)}
                     dim={anySelected && !isSel}
                     selected={!lineup && isSel}
                     label={`${buildingCopy[i].title}, ${buildingCopy[i].sub}. ${buildingCopy[i].head} ${buildingCopy[i].status}`}
@@ -355,7 +356,7 @@ export default function SfMap(props: SfMapProps) {
             <rect className="lineup-panel" aria-hidden x={lineupPos.panel.x} y={lineupPos.panel.y}
               width={lineupPos.panel.w} height={lineupPos.panel.h} rx={18} />
           )}
-          <g className={`figures${reducedMotion ? '' : ' walk'}${walking ? ' walking' : ''}`}>{womenNodes}</g>
+          <g className={`figures${reducedMotion ? '' : ' walk'}`}>{womenNodes}</g>
         </g>
       </svg>
 
@@ -365,8 +366,8 @@ export default function SfMap(props: SfMapProps) {
             <div key={b.status} className={`lineup-block ${b.status}`} data-lineup-block={b.status}
               style={{ left: b.x + b.w / 2, top: b.y, width: Math.max(b.w + 40, 180), ['--block-h' as string]: `${b.h}px` }}>
               <div className="lineup-head">
-                <div className="lineup-count num">{lineupLabels[b.status].count}</div>
                 <div className="lineup-label">{lineupLabels[b.status].label}</div>
+                <div className="lineup-count num">{lineupLabels[b.status].count}</div>
               </div>
               {b.status === 'qualifies' && (
                 <div className="lineup-odds" style={{ top: b.h + 6 }}>{result ? lineupOddsLine(result).replace(/1 in (\S+)/, '1\u00a0in\u00a0$1') : null}</div>

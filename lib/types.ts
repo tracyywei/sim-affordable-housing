@@ -169,6 +169,7 @@ export interface ScoreboardsProps {
   result: SliderResult;
   baseline: SliderResult;     // 10%
   total: number;              // 20 buildings proposed
+  meta?: Meta;                // leftOutCard needs counts + scale
 }
 
 export interface AffordableCardProps {
@@ -184,6 +185,7 @@ export interface LegendProps {
   onToggleLineup(): void;
   personas: PersonasFile;
   onPersona(name: PersonaName): void;
+  meta?: Meta;                // figure scale for household counts
 }
 
 export interface PersonaChipsProps {

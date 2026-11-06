@@ -8,7 +8,7 @@ Standard library only (no pandas needed).
 Writes:
   data/households.json          SF householders from ACS PUMS (real, anonymized, weighted; not used by the app)
   data/projects.json            real SF pipeline projects >= 25 units (cost fields = ILLUSTRATIVE; not used by the app)
-  public/data/women100.json, personas.json, meta.json   the 100 women, 4 personas, counts/odds (SPEC §5)
+  public/data/women100.json, personas.json, meta.json   the women (1 figure = 100 households), 4 personas, counts/odds (SPEC §5)
   data/targets.json             ACS county stats (every variable of every table, with labels)
   data/validation.json          PUMS-weighted vs ACS published, for the "it matches" check
   data/claude_context.md        compact fact sheet to paste into Claude system prompts
@@ -131,9 +131,11 @@ if households:
               "too_little": [x for x in women if x["status"] == "too_little"],
               "qualifies": [x for x in women if x["status"] == "qualifies"]}
     Wtot = sum(x["weight"] for x in women)
-    raw = {k: 100 * sum(x["weight"] for x in v) / Wtot for k, v in strata.items()}
+    SCALE = 100                       # 1 figure = 100 SF women-led renter households
+    N = round(Wtot / SCALE)
+    raw = {k: N * sum(x["weight"] for x in v) / Wtot for k, v in strata.items()}
     n = {k: int(v) for k, v in raw.items()}
-    for k in sorted(raw, key=lambda k: -(raw[k] - n[k]))[: 100 - sum(n.values())]: n[k] += 1
+    for k in sorted(raw, key=lambda k: -(raw[k] - n[k]))[: N - sum(n.values())]: n[k] += 1
     def systematic(pool, k):
         if k == 0 or not pool: return []
         pool = sorted(pool, key=lambda x: x["income"]); W = sum(x["weight"] for x in pool)
@@ -156,18 +158,19 @@ if households:
         if not pool: print(f"  ! no record for persona {name}"); continue
         best = min(pool, key=lambda x: abs(x["income"] - inc) / 10000 + abs(x["householderAge"] - age) / 10)
         personas[name] = best
-        if not any(x is best for x in picked[st]) and picked[st]:   # make sure she is among the 100
+        if not any(x is best for x in picked[st]) and picked[st]:   # make sure she is among the N
             taken = [id(v) for v in personas.values()]
             j = next((i for i in range(len(picked[st]) - 1, -1, -1) if id(picked[st][i]) not in taken), None)
             if j is not None: picked[st][j] = best
-    women100 = []
+    women100 = []; labelled = set()   # a heavy record can be drawn more than once; label the persona only once
     for st, lst in picked.items():
         for x in lst:
-            pname = next((k for k, v in personas.items() if v is x), None)
+            pname = next((k for k, v in personas.items() if v is x and k not in labelled), None)
+            if pname: labelled.add(pname)
             women100.append({"id": f"w{len(women100)}", "serial": x["serial"], "size": x["size"], "kids": x["kids"],
                 "income": x["income"], "age": x["householderAge"], "rentMonthly": x["rentMonthly"],
                 "rentShare": x["rentBurden"], "status": x["status"], "gap": x["gap"], "occp": x["occp"],
-                "persona": pname, "homeBedrooms": home_br(x["size"]), "limit": limit(x["size"]),
+                "persona": pname, "puma": x["puma"], "homeBedrooms": home_br(x["size"]), "limit": limit(x["size"]),
                 "floor": floor_inc(home_br(x["size"]))})
     # SPEC §4.4 "For scale": ALL affordable homes completed in the latest full year (Housing Production xdht-4php)
     forScale = None
@@ -189,12 +192,31 @@ if households:
     meta = {"counts": counts, "gapCount": sum(w["gap"] for w in women100), "qualifiers": round(qualifiers),
             "womenShareOfQualifiers": round(wq / qualifiers, 4) if qualifiers else None,
             "rent": {b: round(rent(b)) for b in range(4)}, "floor": {b: floor_inc(b) for b in range(4)},
-            "limit": {s_: limit(s_) for s_ in range(1, 9)}, "forScale": forScale}
+            "limit": {s_: limit(s_) for s_ in range(1, 9)}, "forScale": forScale,
+            "scale": SCALE, "womenRenterHouseholds": round(Wtot)}
+    # PUMA -> exact geojson `nhood` names it covers: 2020 tract->PUMA (Census) joined to 2020 tract->neighborhood (DataSF sevw-6tgi)
+    if exists("tract_to_puma_2020.txt") and exists("sf_tracts_neighborhoods_2020.csv") and os.path.exists("public/data/sf-neighborhoods.geojson"):
+        csv.field_size_limit(1 << 30)
+        t2p = {r["TRACTCE"]: r["PUMA5CE"] for r in csv.DictReader(open(os.path.join(RAW, "tract_to_puma_2020.txt"), encoding="utf-8-sig"))
+               if r["STATEFP"] == "06" and r["COUNTYFP"] == "075"}
+        geo_names = {f["properties"].get("nhood") for f in json.load(open("public/data/sf-neighborhoods.geojson"))["features"]}
+        pn = defaultdict(set); unmatched = set()
+        for r in csv.DictReader(open(os.path.join(RAW, "sf_tracts_neighborhoods_2020.csv"), encoding="utf-8-sig")):
+            pu, nh = t2p.get(r["tractce"]), r["neighborhoods_analysis_boundaries"]
+            if pu and nh in geo_names: pn[pu].add(nh)
+            else: unmatched.add((r["tractce"], pu, nh))
+        meta["pumaNeighborhoods"] = {k: sorted(v) for k, v in sorted(pn.items())}
+        print(f"\nPUMA -> neighborhoods ({len(pn)} PUMAs; skipped tracts not on the map: {sorted(unmatched)})")
+        for k, v in meta["pumaNeighborhoods"].items(): print(f"  {k}: {len(v)} {v}")
+        assert {x["puma"] for x in women100} <= set(meta["pumaNeighborhoods"]), "a woman's PUMA has no neighborhoods"
+    else:
+        print("  ! tract files missing: meta.pumaNeighborhoods omitted")
     json.dump(women100, open("public/data/women100.json", "w"), indent=1)
     # SPEC §5.5 / §9.4: neighborhood = exact `nhood` value in sf-neighborhoods.geojson.
     # job = the record's REAL occupation (OCCP), official 2018 Census title from the PUMS data dictionary,
     # shortened to plain words below. "Retired " is prefixed only if the record is not in the labor force (ESR=6).
-    hood = {"Linh": "Excelsior", "Rosa": "Mission", "Ana": "Sunset/Parkside", "Priya": "Mission Bay"}
+    # pinned inside each record's own PUMA (placement follows PUMAs; checked against meta.pumaNeighborhoods below)
+    hood = {"Linh": "Outer Richmond", "Rosa": "Inner Richmond", "Ana": "Lone Mountain/USF", "Priya": "Western Addition"}
     PLAIN_OCCP = {"4110": "Waitress", "4230": "Housekeeper", "8830": "Photo lab worker", "0710": "Management analyst"}
     occ_title = {}
     dict_path = os.path.join(RAW, f"pums{YEAR}", f"PUMS_Data_Dictionary_{YEAR}.csv")
@@ -205,7 +227,7 @@ if households:
     print("  persona jobs (OCCP -> official title -> plain label, ESR):")
     for k in personas:
         w = next((w for w in women100 if w["persona"] == k), None)
-        assert w is not None, f"persona {k} not among the 100"
+        assert w is not None, f"persona {k} not among the {N}"
         code, esr = personas[k]["occp"], personas[k].get("esr")
         assert code in PLAIN_OCCP, f"add a plain label for OCCP {code} ({occ_title.get(code)}) to PLAIN_OCCP"
         job = ("Retired " + PLAIN_OCCP[code].lower()) if esr == "6" else PLAIN_OCCP[code]
@@ -221,13 +243,16 @@ if households:
         assert not missing
     json.dump(personas_out, open("public/data/personas.json", "w"), indent=1)
     json.dump(meta, open("public/data/meta.json", "w"), indent=1)
-    print(f"\n100 WOMEN: {counts}, gap {meta['gapCount']} -> public/data/women100.json")
+    print(f"\n{N} WOMEN (1 figure = {SCALE} households; {round(Wtot):,} SF women-led renter households): {counts}, gap {meta['gapCount']} -> public/data/women100.json")
     print(f"  qualifiers citywide (all renter households): {qualifiers:,.0f}; women-led share {meta['womenShareOfQualifiers']}")
     for pct_, homes_ in ((5, 117), (8, 148), (10, 141), (20, 48)):   # affordable homes from SPEC §4.3
         print(f"  odds at {pct_}% ({homes_} homes): 1 in {round(qualifiers/homes_):,} · women-led homes ≈ {round(homes_*meta['womenShareOfQualifiers'])}")
     print(f"  forScale: {forScale}")
-    assert sum(counts.values()) == 100 and len(women100) == 100
+    assert sum(counts.values()) == N and len(women100) == N and all(w["puma"] for w in women100)
     assert set(personas_out) == {"Linh", "Rosa", "Ana", "Priya"}
+    for k, v in personas_out.items():
+        if meta.get("pumaNeighborhoods"):
+            assert v["neighborhood"] in meta["pumaNeighborhoods"][v["puma"]], f"{k} pinned outside her PUMA {v['puma']}"
     assert personas_out["Linh"]["status"] == "too_little" and personas_out["Linh"]["size"] == 3
     assert personas_out["Priya"]["gap"] and personas_out["Ana"]["status"] == "qualifies" and personas_out["Rosa"]["status"] == "too_little"
     for k, v in personas.items():

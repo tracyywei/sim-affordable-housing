@@ -2,6 +2,8 @@
 // Catches errors that only show up when code runs: a module that throws while loading, a
 // component that crashes during render (undefined data, bad lookups, a bad slider value).
 // renderToString doesn't run effects, so window/d3-zoom code inside useEffect isn't exercised here.
+// NOTE: SfMap computes its layout after measuring its size in an effect, so these SfMap renders only
+// cover the empty map shell (no buildings or women). Buildings are rendered directly in building.test.tsx.
 import { describe, expect, test } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,15 +16,11 @@ import ControlBar from '@/components/hud/ControlBar';
 import Scoreboards from '@/components/hud/Scoreboards';
 import AffordableCard from '@/components/hud/AffordableCard';
 import Legend from '@/components/hud/Legend';
-import ClaudeBubble from '@/components/hud/ClaudeBubble';
-import InfoDrawer from '@/components/hud/InfoDrawer';
-import StillCaption from '@/components/hud/StillCaption';
 import PersonaChips from '@/components/hud/PersonaChips';
 import { precompute } from '@/lib/sim';
 import { MAX_PCT, START_PCT, TOTAL_BUILDINGS } from '@/lib/constants';
 import { PERSONA_NAMES } from '@/lib/types';
 import type { Meta, NeighborhoodsGeo, PersonasFile, Selection, ValidationRow, Woman } from '@/lib/types';
-import validationJson from '@/data/validation.json';
 
 // Next-only modules (next/font) can't load outside Next. The import + typecheck tests still cover them.
 const NEXT_ONLY = new Set(['../app/layout.tsx']);
@@ -45,7 +43,6 @@ const data = precompute({
   meta: pub('meta.json') as Meta,
   geo: pub('sf-neighborhoods.geojson') as NeighborhoodsGeo,
 });
-const validation = validationJson as ValidationRow[];
 const noop = () => {};
 const pcts = Array.from({ length: MAX_PCT + 1 }, (_, i) => i);
 
@@ -95,34 +92,21 @@ describe('SfMap renders', () => {
 describe('HUD renders', () => {
   const base = data.results[START_PCT];
 
-  test.each(pcts)('Scoreboards, ControlBar, Legend, StillCaption at %i%%', (pct) => {
+  test.each(pcts)('Scoreboards, ControlBar, Legend at %i%%', (pct) => {
     const r = data.results[pct];
-    renderToString(<Scoreboards result={r} baseline={base} total={TOTAL_BUILDINGS} />);
-    renderToString(<ControlBar pct={pct} onChange={noop} onExplain={noop} explainLoading={false} hasDragged={pct !== START_PCT} />);
+    renderToString(<Scoreboards result={r} baseline={base} total={TOTAL_BUILDINGS} meta={data.meta} />);
+    renderToString(<ControlBar pct={pct} onChange={noop} hasDragged={pct !== START_PCT} />);
     for (const lineup of [false, true]) {
       renderToString(
         <Legend counts={data.meta.counts} gapCount={data.meta.gapCount} result={r} lineup={lineup}
-          onToggleLineup={noop} personas={data.personas} onPersona={noop} />,
+          onToggleLineup={noop} personas={data.personas} onPersona={noop} meta={data.meta} />,
       );
     }
-    renderToString(<StillCaption pct={pct} womenCount={data.women.length} hasDragged />);
   });
 
   test('AffordableCard with and without a persona', () => {
     renderToString(<AffordableCard meta={data.meta} persona={null} />);
     for (const name of PERSONA_NAMES) renderToString(<AffordableCard meta={data.meta} persona={data.personas[name]} />);
-  });
-
-  test('ClaudeBubble in each state', () => {
-    for (const explain of [
-      { open: false, loading: false, text: '', source: 'template' as const, forPct: START_PCT },
-      { open: true, loading: true, text: 'thinking', source: 'template' as const, forPct: START_PCT },
-      { open: true, loading: false, text: 'An answer.', source: 'template' as const, forPct: MAX_PCT },
-    ]) renderToString(<ClaudeBubble explain={explain} onClose={noop} />);
-  });
-
-  test('InfoDrawer open and closed', () => {
-    for (const open of [false, true]) renderToString(<InfoDrawer open={open} onClose={noop} meta={data.meta} validation={validation} />);
   });
 
   test('small controls', () => {

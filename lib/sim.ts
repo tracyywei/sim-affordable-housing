@@ -1,7 +1,7 @@
 // Owner: Agent B. Layer 1 simulation (SPEC §4.2) + odds (SPEC §5.3). precompute(raw) -> AppData.
 import type { AppData, Meta, SliderResult } from './types';
 import type { RawData } from './data';
-import { BUILDINGS, MAX_PCT } from './constants';
+import { BUILDINGS, MAX_PCT, affordableUnits } from './constants';
 
 /** One slider position. */
 export function run(pct: number, meta: Meta): SliderResult {
@@ -13,7 +13,7 @@ export function run(pct: number, meta: Meta): SliderResult {
     if (!built[i]) return;
     buildingsBuilt += 1;
     newHomes += b.units;
-    affordableHomes += Math.round((b.units * pct) / 100);
+    affordableHomes += affordableUnits(b.units, pct);
   });
   return {
     pct,

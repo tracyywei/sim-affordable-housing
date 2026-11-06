@@ -3,6 +3,7 @@ import { geoArea, geoMercator, geoPath, type GeoProjection } from 'd3-geo';
 import type { Feature, Geometry, Position } from 'geojson';
 import type { BuildingDef, NeighborhoodsGeo, PersonasFile, Status, Woman } from './types';
 import { STATUSES } from './types';
+import { windowCount } from './constants';
 
 /* ------------------------------------------------------------------ seeded rng */
 
@@ -139,11 +140,30 @@ export const FIT_PAD = { left: 24, top: 120, right: 340, bottom: 240 };
 export function fitLeft(width: number): number {
   return width >= 1100 ? Math.min(360, Math.round(width * 0.25)) : FIT_PAD.left;
 }
-/** Building heights (SPEC §9.3): small (<75 units) 28 px, medium 40, large (>175) 54. */
+/** Building window grid (SPEC §9.3): 4 windows per floor, one window = UNITS_PER_WINDOW apartments. */
+export const WINDOW_COLS = 4;
+export const WINDOW_ROW_H = 6;
+export const BUILDING_PAD_TOP = 4;
+export const BUILDING_PAD_BOTTOM = 4;
+
+/** Floors of windows a building needs for its apartments. */
+export function windowRows(units: number): number {
+  return Math.ceil(windowCount(units) / WINDOW_COLS);
+}
+
+/** Building height grows with its apartments: 25 units ≈ 14 px tall, 300 units ≈ 56 px. */
 export function buildingHeight(units: number): number {
-  return units < 75 ? 28 : units > 175 ? 54 : 40;
+  return BUILDING_PAD_TOP + BUILDING_PAD_BOTTOM + windowRows(units) * WINDOW_ROW_H;
 }
 export const WOMAN_MIN_DIST = 14;
+/** Min spacing between figures: 14 px for ~100, shrinking (to >= 5 px) as the crowd grows. */
+export function womanMinDist(residentialArea: number, n: number): number {
+  return Math.max(5, Math.min(WOMAN_MIN_DIST, Math.sqrt((residentialArea * 0.32) / Math.max(1, n))));
+}
+/** Figure drawing scale: full size for ~100 figures, ~0.5 (about 9-10 px tall) for ~740. */
+export function figureSize(n: number): number {
+  return n <= 150 ? 1 : n >= 600 ? 0.52 : 1 - ((n - 150) / 450) * 0.48;
+}
 
 export function computeLayout(
   geoIn: NeighborhoodsGeo | null,
@@ -152,6 +172,7 @@ export function computeLayout(
   buildings: BuildingDef[],
   width: number,
   height: number,
+  pumaNeighborhoods?: Record<string, string[]> | null,
 ): MapLayout {
   const placeholder = !geoIn || !geoIn.features?.length;
   const geo = rewindGeo(placeholder ? placeholderGeo() : geoIn!);
@@ -183,17 +204,26 @@ export function computeLayout(
   const ok = (g: Region, x: number, y: number) => inRings(g.rings, x, y) && !parks.some((p) => inRings(p.rings, x, y));
   const totalArea = residentialRegions.reduce((s, r) => s + r.area, 0);
 
-  const pickRegion = (): Region => {
-    let u = rand() * totalArea;
-    for (const r of residentialRegions) { u -= r.area; if (u <= 0) return r; }
-    return residentialRegions[residentialRegions.length - 1];
+  const pickFrom = (list: Region[], total: number): Region => {
+    let u = rand() * total;
+    for (const r of list) { u -= r.area; if (u <= 0) return r; }
+    return list[list.length - 1];
   };
+  let pool = residentialRegions, poolArea = totalArea;
+  const pickRegion = (): Region => pickFrom(pool, poolArea);
   const sampleIn = (reg: Region | undefined, r: number, tries = 400): Pt => {
     for (let i = 0; i < tries; i++) {
       const g = reg ?? pickRegion();
       const x = g.x0 + rand() * (g.x1 - g.x0);
       const y = g.y0 + rand() * (g.y1 - g.y0);
       if (ok(g, x, y) && free(x, y, r)) return { x, y };
+    }
+    // dense area: try a little tighter before giving up on spacing
+    for (let i = 0; i < tries; i++) {
+      const g = reg ?? pickRegion();
+      const x = g.x0 + rand() * (g.x1 - g.x0);
+      const y = g.y0 + rand() * (g.y1 - g.y0);
+      if (ok(g, x, y) && free(x, y, r * 0.6)) return { x, y };
     }
     // relax spacing rather than fail
     for (let i = 0; i < tries; i++) {
@@ -248,20 +278,37 @@ export function computeLayout(
     height: 0.9 + rand() * 0.2,
     bobDelay: rand() * 3,
   });
-  for (const p of Object.values(personas)) {
+  // find each persona's figure by woman.persona (ids change between data builds)
+  for (const w of women) {
+    const p = w.persona ? personas[w.persona] : undefined;
+    if (!p) continue;
     const pt = sampleIn(regionFor(p.neighborhood), 22);
     taken.push({ ...pt, r: 22 });
     // room for the name tag, and for Linh's "this is Linh" note to the upper right
     taken.push({ x: pt.x, y: pt.y - 24, r: 20 });
-    if (p.persona === 'Linh') taken.push({ x: pt.x + 40, y: pt.y - 22, r: 26 }, { x: pt.x + 78, y: pt.y - 22, r: 26 });
-    spots[p.id] = { ...pt, ...deco() };
+    spots[w.id] = { ...pt, ...deco() };
   }
 
   // 3. everyone else: rejection sampling across residential neighborhoods, >= 14 px apart
+  //    Spacing adapts to the number of figures (14 px for 100, ~9 px for ~740).
+  //    With meta.pumaNeighborhoods, each woman goes into a neighborhood of her own PUMA (area-weighted).
+  const minDist = womanMinDist(totalArea, women.length);
+  const pumaPools = new Map<string, { list: Region[]; area: number }>();
   for (const w of women) {
     if (spots[w.id]) continue;
-    const pt = sampleIn(undefined, WOMAN_MIN_DIST);
-    taken.push({ ...pt, r: WOMAN_MIN_DIST });
+    pool = residentialRegions; poolArea = totalArea;
+    const names = w.puma && pumaNeighborhoods ? pumaNeighborhoods[w.puma] : undefined;
+    if (names && names.length) {
+      let pp = pumaPools.get(w.puma!);
+      if (!pp) {
+        const list = names.map((n) => regions.get(n)).filter((r): r is Region => !!r && r.residential && r.area > 0);
+        pp = { list, area: list.reduce((a, r) => a + r.area, 0) };
+        pumaPools.set(w.puma!, pp);
+      }
+      if (pp.list.length) { pool = pp.list; poolArea = pp.area; }
+    }
+    const pt = sampleIn(undefined, minDist);
+    taken.push({ ...pt, r: minDist });
     spots[w.id] = { ...pt, ...deco() };
   }
 
@@ -273,30 +320,31 @@ export function computeLayout(
 export interface LineupBlock { status: Status; x: number; y: number; w: number; h: number; count: number; }
 export interface Lineup { spots: Record<string, Pt>; blocks: LineupBlock[]; panel: { x: number; y: number; w: number; h: number }; }
 
-export const LINEUP_DX = 17;
-export const LINEUP_DY = 25;
-/** Everything (counts, labels, figures, odds line) stays between these y values so the Claude bubble never covers it. */
+/** Everything (labels, figures, odds line) stays between these y values so the bottom panels never cover it. */
 export const LINEUP_TOP = 150;
 export const LINEUP_BOTTOM = 440;
-const LINEUP_HEAD = 78;      // big count + label above each block
-const LINEUP_FOOT = 58;      // odds line under the qualify block
+const LINEUP_HEAD = 52;      // label + count above each block
+const LINEUP_FOOT = 46;      // odds line under the eligible block
 
 /** Three blocks (too_much, too_little, qualifies) side by side in the middle of the map area. */
 export function computeLineup(women: Woman[], width: number, height: number): Lineup {
   void height;
+  const size = figureSize(women.length);
+  const DX = Math.max(7, 17 * size), DY = Math.max(11, 25 * size), FIG_H = 20 * size;
   const x0 = FIT_PAD.left, x1 = Math.max(x0 + 300, width - FIT_PAD.right);   // lineup ignores fitLeft (legend sits below it)
   const groups = STATUSES.map((s) => women.filter((w) => w.status === s));
   const maxN = Math.max(1, ...groups.map((g) => g.length));
   const availH = LINEUP_BOTTOM - LINEUP_TOP - LINEUP_HEAD - LINEUP_FOOT;
-  const maxRows = Math.max(1, Math.floor(availH / LINEUP_DY));
-  const minGap = 36;
-  const maxCols = Math.max(4, Math.floor(((x1 - x0) - 2 * minGap - 20) / (3 * LINEUP_DX)));
-  const cols = Math.min(maxCols, Math.max(8, Math.ceil(maxN / Math.min(maxRows, 4))));
+  const maxRows = Math.max(1, Math.floor((availH - FIG_H) / DY) + 1);
+  const minGap = 40;
+  const maxCols = Math.max(4, Math.floor(((x1 - x0) - 2 * minGap - 80) / (3 * DX)));
+  const wantRows = Math.min(maxRows, Math.max(4, Math.ceil(Math.sqrt(maxN / 2))));
+  const cols = Math.min(maxCols, Math.max(8, Math.ceil(maxN / wantRows)));
   const rows = Math.ceil(maxN / cols);
-  const blockW = cols * LINEUP_DX;
-  const gap = Math.max(minGap, Math.min(80, ((x1 - x0) - 3 * blockW) / 4));
+  const blockW = cols * DX;
+  const gap = Math.max(minGap, Math.min(90, ((x1 - x0) - 3 * blockW) / 4));
   const totalW = 3 * blockW + 2 * gap;
-  const blockH = rows * LINEUP_DY;
+  const blockH = (rows - 1) * DY + FIG_H + 4;
   const left = (x0 + x1) / 2 - totalW / 2;
   const top = LINEUP_TOP + LINEUP_HEAD;
   const spots: Record<string, Pt> = {};
@@ -304,7 +352,7 @@ export function computeLineup(women: Woman[], width: number, height: number): Li
     const bx = left + gi * (blockW + gap);
     g.forEach((w, i) => {
       const r = Math.floor(i / cols), c = i % cols;
-      spots[w.id] = { x: bx + c * LINEUP_DX + LINEUP_DX / 2, y: top + r * LINEUP_DY + 20 };   // feet; figures ~18 px tall
+      spots[w.id] = { x: bx + c * DX + DX / 2, y: top + r * DY + FIG_H };   // feet
     });
     return { status: STATUSES[gi], x: bx, y: top, w: blockW, h: blockH, count: g.length };
   });

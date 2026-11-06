@@ -50,17 +50,17 @@ function plural(n: number, one: string, many: string): string {
 
 export function statusLabel(status: Status): string {
   switch (status) {
-    case 'too_much': return 'Earns too much';
-    case 'too_little': return 'Earns too little';
-    case 'qualifies': return 'Qualifies';
+    case 'too_much': return 'Above the income limit';
+    case 'too_little': return 'Below the minimum income';
+    case 'qualifies': return 'Eligible';
   }
 }
 
 export function statusLong(status: Status): string {
   switch (status) {
-    case 'too_much': return 'Earns too much to qualify';
-    case 'too_little': return 'Earns too little to qualify';
-    case 'qualifies': return 'Qualifies for an affordable home';
+    case 'too_much': return 'Above the income limit';
+    case 'too_little': return 'Below the minimum income';
+    case 'qualifies': return 'Eligible for an affordable unit';
   }
 }
 
@@ -79,7 +79,12 @@ export function bedroomsForSize(size: number): number {
 
 /* ------------------------------------------------------------------ control bar */
 
-export const sliderLabel = 'Share of new homes that must be affordable';
+export const sliderLabel = 'Share of units in proposed buildings that must be affordable';
+
+/** One line under the slider (replaces sliderSentence on screen). */
+export function tradeoffCaption(): string {
+  return 'Lower share: more buildings get built. Higher share: more affordable homes in each building, until buildings stop getting built.';
+}
 
 /** "10%" */
 export function pctPill(pct: number): string {
@@ -201,6 +206,35 @@ function oddsChange(result: SliderResult, baseline: SliderResult): Change {
   return { text: `${tone === 'more' ? 'better' : 'worse'} than ${at} at ${baseline.pct}%`, tone };
 }
 
+export interface RailCard { label: string; big: string; sub: string; }
+
+/** (1) "New homes built" · "1,400" · "in 13 of 20 proposed buildings" */
+export function newHomesCard(result: SliderResult, total: number): RailCard {
+  return {
+    label: 'New homes built',
+    big: fmtInt(result.newHomes),
+    sub: `in ${fmtInt(result.buildingsBuilt)} of ${fmtInt(total)} proposed buildings`,
+  };
+}
+
+/** (2) "Affordable homes" · "141" · "of the 1,400 new homes" */
+export function affordableHomesCard(result: SliderResult): RailCard {
+  return {
+    label: 'Affordable homes',
+    big: fmtInt(result.affordableHomes),
+    sub: `of the ${fmtInt(result.newHomes)} new homes`,
+  };
+}
+
+/** (3) "Low-income women left out" · "≈4,100" (counts.too_little × scale) · fixed sub */
+export function leftOutCard(meta: Meta): RailCard {
+  return {
+    label: 'Low-income women left out',
+    big: fmtHouseholds(meta.counts.too_little * figureScale(meta)),
+    sub: 'women-led households earn below the minimum income at every setting',
+  };
+}
+
 export const noBuildingsBanner = 'At this level no building gets built (simplified model).';
 
 /* ------------------------------------------------------------------ "What 'affordable' means here" */
@@ -225,40 +259,71 @@ export function affordableMeansCard(meta: Meta): AffordableMeans {
   const famLimit = meta.limit[String(fam)];
   const sentences: Seg[][] = [
     [
-      { text: 'An affordable studio costs ' },
-      { text: `${fmtMoney(studioRent)} a month`, bold: true },
+      { text: 'Rent for an affordable studio is set at ' },
+      { text: `${fmtMoney(studioRent)}/month`, bold: true },
+      { text: ' (a fixed city limit, not an average).' },
+    ],
+    [
+      { text: 'To qualify, a person living alone must earn ' },
+      { text: `${fmtMoney(singleFloor)}–${fmtMoney(singleLimit)}`, bold: true },
       { text: '.' },
     ],
     [
-      { text: 'To get one, a woman living alone must earn between ' },
-      { text: `${fmtMoney(singleFloor)} and ${fmtMoney(singleLimit)}`, bold: true },
-      { text: '.' },
+      { text: `A household of ${fam} (for example, a parent with ${fam - 1} children) must earn ` },
+      { text: `${fmtMoney(famFloor)}–${fmtMoney(famLimit)}`, bold: true },
+      { text: ` for a ${homeName(famBr)}.` },
     ],
-    [{ text: `Family of ${fam}: ${fmtMoney(famFloor)}–${fmtMoney(famLimit)} for a ${homeName(famBr)}.` }],
   ];
   return {
-    title: "What 'affordable' means here",
+    title: 'What "affordable" means',
     sentences,
-    text: sentences.map((s) => s.map((g) => g.text).join('')).join(' '),
+    text: sentences.map((x) => x.map((g) => g.text).join('')).join(' '),
   };
 }
 
 /* ------------------------------------------------------------------ legend + line-up */
 
-export function legendTitle(womenCount: number): string {
-  return `Who these ${fmtInt(womenCount)} women are`;
+/** Households each figure stands for (meta.scale; 1 if the data predates scaling). */
+export function figureScale(meta: Pick<Meta, 'scale'>): number {
+  return meta.scale ?? 1;
 }
 
-/** Under "Earns too much": "21 of them still spend 30%+ of income on rent" */
-export function legendGapLine(gapCount: number): string {
-  return `${fmtInt(gapCount)} of them still spend 30%+ of income on rent`;
+/** 31800 -> "≈31,800" (rounded to the nearest 100 when ≥ 100). */
+export function fmtHouseholds(n: number): string {
+  const r = n >= 100 ? Math.round(n / 100) * 100 : Math.round(n);
+  return `≈${fmtInt(r)}`;
 }
 
-/** Qualifies row: "odds: 1 in N" (or a no-homes line). */
+/** Legend title. (The argument is ignored; kept so older callers compile.) */
+export function legendTitle(_womenCount?: number): string {
+  return 'Women-led renter households in SF';
+}
+
+/** "Each figure = 100 households" */
+export function scaleLine(scale: number): string {
+  return `Each figure = ${fmtInt(scale)} ${plural(scale, 'household', 'households')}`;
+}
+
+export interface GroupRow { label: string; pct: string; households: string; }
+
+/** Legend row: { label: "Above the income limit", pct: "43%", households: "≈31,800 households" } */
+export function groupRow(status: Status, count: number, total: number, scale: number): GroupRow {
+  return {
+    label: statusLabel(status),
+    pct: total > 0 ? `${Math.round((count / total) * 100)}%` : '0%',
+    households: `${fmtHouseholds(count * scale)} households`,
+  };
+}
+
+/** Under "Above the income limit": "≈900 still spend 30%+ of income on rent" */
+export function legendGapLine(gapCount: number, scale: number = 1): string {
+  return `${fmtHouseholds(gapCount * scale)} still spend 30%+ of income on rent`;
+}
+
+/** Eligible row: "Odds: 1 in N" (or "No affordable homes"). */
 export function legendOddsLine(result: SliderResult): string {
-  if (result.pct === 0) return 'no affordable homes required';
-  if (result.oddsN === null) return 'no affordable homes get built';
-  return `odds: 1 in ${fmtInt(result.oddsN)}`;
+  if (result.oddsN === null || result.affordableHomes === 0) return 'No affordable homes';
+  return `Odds: 1 in ${fmtInt(result.oddsN)}`;
 }
 
 export function lineupLabels(counts: Record<Status, number>): Record<Status, { label: string; count: string }> {
@@ -324,29 +389,25 @@ export function personaLines(p: Persona, result: SliderResult, meta?: Meta): Per
     case 'too_little': {
       const home = homeName(p.homeBedrooms);
       const r = meta?.rent[String(p.homeBedrooms)];
-      const homePart = r !== undefined ? `an affordable ${home} (${fmtMoney(r)}/month)` : `an affordable ${home}`;
-      body = `${p.persona} would need to earn ${fmtMoney(p.floor)} for ${homePart}. That's ${fmtMoney(p.floor - p.income)} more than she makes.`;
+      const rentPart = r !== undefined ? `Affordable units still charge rent: ${fmtMoney(r)}/month for a ${home}.` : 'Affordable units still charge rent.';
+      body = `${rentPart} Applicants must earn at least twice the yearly rent, ${fmtMoney(p.floor)}. ${p.persona} earns ${fmtMoney(p.income)}, which is ${fmtMoney(p.floor - p.income)} short.`;
       break;
     }
     case 'qualifies': {
-      const total = fmtInt(result.built.length);
-      if (result.pct === 0) {
-        body = `She can apply, but at this level no homes have to be affordable, so there's nothing to apply for.`;
-      } else if (result.oddsN === null) {
-        body = `She can apply, but at this level no affordable homes get built, so there's nothing to apply for.`;
+      if (result.oddsN === null || result.affordableHomes === 0) {
+        body = 'Eligible, but at this setting there are no affordable homes to apply for.';
       } else {
         const n = fmtInt(result.oddsN);
-        body = `She can apply. With ${n} households competing for every home, her odds are 1 in ${n} from these ${total} buildings.`;
+        body = `Eligible. With ${n} eligible households for every affordable home, her odds are 1 in ${n}.`;
       }
       break;
     }
     case 'too_much': {
       const over = fmtMoney(p.income - p.limit);
-      if (p.gap && p.rentShare !== null) {
-        body = `She earns ${over} over the limit for her household size, but rent still takes ${fmtPctShare(p.rentShare)} of her income. This rule can't help her.`;
-      } else {
-        body = `She earns ${over} over the limit for her household size, so she can't apply for these homes.`;
-      }
+      const who = `${p.size} ${plural(p.size, 'person', 'people')}`;
+      body = p.gap && p.rentShare !== null
+        ? `Earns ${over} above the income limit for ${who}, yet rent takes ${fmtPctShare(p.rentShare)} of her income.`
+        : `Earns ${over} above the income limit for ${who}.`;
       break;
     }
   }
@@ -441,7 +502,7 @@ export function explainTemplate(req: ExplainRequest): string {
 
 /* ------------------------------------------------------------------ chrome */
 
-export const simplifiedModelPill = 'Simplified model';
+export const simplifiedModelPill = 'Simplified model: real income limits, made-up buildings';
 
 export const chrome = {
   title: "Who's Left Out",
@@ -458,8 +519,8 @@ export const chrome = {
   dragMe: 'drag me!',
   thisIsLinh: 'this is Linh',
   startingPoint: '▲ starting point (not current law)',
-  lineUp: 'Line them up',
-  backToMap: 'Back to the map',
+  lineUp: 'Group by eligibility',
+  backToMap: 'Back to map',
   explain: '✨ Explain this',
   thinking: 'thinking…',
   close: 'Close',

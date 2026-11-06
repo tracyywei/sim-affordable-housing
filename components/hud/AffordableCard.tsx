@@ -1,7 +1,6 @@
 // Owner: Agent E. "What 'affordable' means here" + a $0–$150K income bar with the qualifying band and a persona tick.
-import { affordableMeansCard, fmtK, fmtMoney, statusLabel } from '@/lib/copy';
+import { affordableMeansCard, chrome, fmtK, fmtMoney, statusLabel } from '@/lib/copy';
 import type { AffordableCardProps, Status } from '@/lib/types';
-import { ui } from './text';
 
 const STATUS_VAR: Record<Status, string> = {
   too_much: 'var(--too-much)', too_little: 'var(--too-little)', qualifies: 'var(--qualifies)',
@@ -15,13 +14,13 @@ export default function AffordableCard({ meta, persona }: AffordableCardProps) {
   const ticks = Array.from({ length: hi / 50000 + 1 }, (_, i) => i * 50000);
 
   return (
-    <section className="card afford-card tilt-l" data-hud="affordable-means">
-      <div className="label">{card.title}</div>
+    <section className="hud-card afford-card" data-hud="affordable-means">
+      <h2 className="hud-label">{card.title}</h2>
       {card.sentences.map((segs, i) => (
         <p key={i}>{segs.map((g, j) => (g.bold ? <strong key={j}>{g.text}</strong> : <span key={j}>{g.text}</span>))}</p>
       ))}
       {persona && (
-        <figure className="income-bar" style={{ margin: 0 }} aria-label={ui('incomeBarLabel')}>
+        <figure className="income-bar" style={{ margin: 0 }} aria-label={chrome.incomeBarLabel}>
           <figcaption className="sr-only">
             {`${persona.persona}: ${fmtMoney(persona.income)} · ${statusLabel(persona.status)} · ${fmtMoney(persona.floor)}–${fmtMoney(persona.limit)}`}
           </figcaption>

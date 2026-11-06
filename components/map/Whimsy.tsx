@@ -1,5 +1,5 @@
 'use client';
-// Map life (SPEC §9.2): fog, waves, sailboat, Golden Gate doodle. Decorative only: aria-hidden, no pointer events,
+// Map life (SPEC §9.2): fog, waves, Golden Gate doodle. Decorative only: aria-hidden, no pointer events,
 // all motion off under prefers-reduced-motion (CSS). Never touches outcomes.
 import { memo } from 'react';
 import type { MapLayout } from '@/lib/layout';
@@ -8,7 +8,6 @@ const WAVES: [number, number][] = [
   [-122.372, 37.795], [-122.365, 37.752], [-122.37, 37.72], [-122.522, 37.765], [-122.524, 37.735],
   [-122.445, 37.818], [-122.405, 37.815], [-122.513, 37.79],
 ];
-const BOAT: [number, number] = [-122.43, 37.818];
 const BRIDGE: [number, number] = [-122.4775, 37.8135];   // Golden Gate strait, just off the north edge
 
 function WhimsyImpl({ layout }: { layout: MapLayout }) {
@@ -17,7 +16,6 @@ function WhimsyImpl({ layout }: { layout: MapLayout }) {
   const fogAnchors = layout.neighborhoods.filter((n) => ['Sunset/Parkside', 'Outer Richmond', 'Inner Sunset'].includes(n.name));
   const br = p(BRIDGE);
   const blen = 44;
-  const boat = p(BOAT);
   return (
     <g className="whimsy" aria-hidden>
       <g className="waves">
@@ -31,13 +29,6 @@ function WhimsyImpl({ layout }: { layout: MapLayout }) {
         <path d={`M0,0 L${blen},0`} className="deck" />
         <path d={`M${blen * 0.22},0 L${blen * 0.22},-12 M${blen * 0.78},0 L${blen * 0.78},-12`} className="tower" />
         <path d={`M0,-1 Q${blen * 0.11},-3 ${blen * 0.22},-12 Q${blen * 0.5},0 ${blen * 0.78},-12 Q${blen * 0.89},-3 ${blen},-1`} className="cable" />
-      </g>
-      <g transform={`translate(${boat[0]},${boat[1]})`}>
-        <g className="sailboat">
-          <path d="M-6,0 L6,0 L4,3 L-4,3 Z" className="hull" />
-          <path d="M0,-1 L0,-12 L6,-2 Z" className="sail" />
-          <path d="M-0.5,-1 L-0.5,-9 L-5,-2 Z" className="sail" />
-        </g>
       </g>
       <g className="fog">
         {fogAnchors.map((n, i) => (
