@@ -241,34 +241,43 @@ export function computeLayout(
 /* ------------------------------------------------------------------ lineup */
 
 export interface LineupBlock { status: Status; x: number; y: number; w: number; h: number; count: number; }
-export interface Lineup { spots: Record<string, Pt>; blocks: LineupBlock[]; }
+export interface Lineup { spots: Record<string, Pt>; blocks: LineupBlock[]; panel: { x: number; y: number; w: number; h: number }; }
 
 export const LINEUP_DX = 17;
-export const LINEUP_DY = 26;
+export const LINEUP_DY = 25;
+/** Everything (counts, labels, figures, odds line) stays between these y values so the Claude bubble never covers it. */
+export const LINEUP_TOP = 150;
+export const LINEUP_BOTTOM = 440;
+const LINEUP_HEAD = 78;      // big count + label above each block
+const LINEUP_FOOT = 58;      // odds line under the qualify block
 
 /** Three blocks (too_much, too_little, qualifies) side by side in the middle of the map area. */
 export function computeLineup(women: Woman[], width: number, height: number): Lineup {
+  void height;
   const x0 = FIT_PAD.left, x1 = Math.max(x0 + 300, width - FIT_PAD.right);
-  const y0 = FIT_PAD.top, y1 = Math.max(y0 + 200, height - FIT_PAD.bottom);
   const groups = STATUSES.map((s) => women.filter((w) => w.status === s));
-  const cols = 8;
-  const gap = Math.max(40, Math.min(110, ((x1 - x0) - 3 * cols * LINEUP_DX) / 4));
+  const maxN = Math.max(1, ...groups.map((g) => g.length));
+  const availH = LINEUP_BOTTOM - LINEUP_TOP - LINEUP_HEAD - LINEUP_FOOT;
+  const maxRows = Math.max(1, Math.floor(availH / LINEUP_DY));
+  const minGap = 36;
+  const maxCols = Math.max(4, Math.floor(((x1 - x0) - 2 * minGap - 20) / (3 * LINEUP_DX)));
+  const cols = Math.min(maxCols, Math.max(8, Math.ceil(maxN / Math.min(maxRows, 4))));
+  const rows = Math.ceil(maxN / cols);
   const blockW = cols * LINEUP_DX;
+  const gap = Math.max(minGap, Math.min(80, ((x1 - x0) - 3 * blockW) / 4));
   const totalW = 3 * blockW + 2 * gap;
-  const maxRows = Math.max(1, ...groups.map((g) => Math.ceil(g.length / cols)));
-  const blockH = maxRows * LINEUP_DY;
+  const blockH = rows * LINEUP_DY;
   const left = (x0 + x1) / 2 - totalW / 2;
-  // leave room above for the big count + label, below for the odds line
-  const top = Math.max(y0 + 90, (y0 + y1) / 2 - blockH / 2 + 20);
+  const top = LINEUP_TOP + LINEUP_HEAD;
   const spots: Record<string, Pt> = {};
   const blocks: LineupBlock[] = groups.map((g, gi) => {
     const bx = left + gi * (blockW + gap);
     g.forEach((w, i) => {
       const r = Math.floor(i / cols), c = i % cols;
-      // feet at y; figures are ~18 px tall
-      spots[w.id] = { x: bx + c * LINEUP_DX + LINEUP_DX / 2, y: top + r * LINEUP_DY + 18 };
+      spots[w.id] = { x: bx + c * LINEUP_DX + LINEUP_DX / 2, y: top + r * LINEUP_DY + 20 };   // feet; figures ~18 px tall
     });
     return { status: STATUSES[gi], x: bx, y: top, w: blockW, h: blockH, count: g.length };
   });
-  return { spots, blocks };
+  const panel = { x: left - 24, y: LINEUP_TOP - 8, w: totalW + 48, h: Math.min(LINEUP_BOTTOM, top + blockH + LINEUP_FOOT) - LINEUP_TOP + 16 };
+  return { spots, blocks, panel };
 }

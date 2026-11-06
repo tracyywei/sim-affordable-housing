@@ -16,6 +16,7 @@ import Neighborhoods from './Neighborhoods';
 import Person from './Person';
 import Building, { buildingHeight } from './Building';
 import Popover from './Popover';
+import Whimsy from './Whimsy';
 import {
   buildingPopover, chrome, lineupLabels as lineupLabelsCopy, lineupOddsLine, personaHeader, personaLines, womanTooltip,
 } from '@/lib/copy';
@@ -51,6 +52,7 @@ export default function SfMap(props: SfMapProps) {
   const [t, setT] = useState<ZoomTransform>(zoomIdentity);
   const [flying, setFlying] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
+  const [walking, setWalking] = useState(false);
 
   /* ---------------------------------------------------------------- size */
   useEffect(() => {
@@ -189,11 +191,17 @@ export default function SfMap(props: SfMapProps) {
   useEffect(() => {
     if (prevLineup.current === lineup) return;
     prevLineup.current = lineup;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    if (!reducedRef.current) {
+      setWalking(true);
+      timer = setTimeout(() => setWalking(false), 800 + STAGGER_MS * data.women.length + 100);
+    }
     if (lineup) {
       if (selectedRef.current) onSelectRef.current(null);
       transitionTo(zoomIdentity, reducedRef.current ? 0 : 400);
     }
-  }, [lineup, transitionTo]);
+    return () => { if (timer) clearTimeout(timer); };
+  }, [lineup, transitionTo, data.women.length]);
 
   /* ---------------------------------------------------------------- interactions */
   const activateWoman = useCallback((id: string) => {
@@ -220,6 +228,7 @@ export default function SfMap(props: SfMapProps) {
     return buildingPopover(b, built, pct, built ? Math.round((b.units * pct) / 100) : 0);
   }), [result, pct]);
 
+  const selBuildingPt = selected?.kind === 'building' && !lineup ? layout?.buildings[selected.index] : undefined;
   const womenNodes = layout ? data.women.map((w, i) => {
     const spot = layout.women[w.id];
     const pos = lineup && lineupPos ? lineupPos.spots[w.id] ?? spot : spot;
@@ -239,6 +248,8 @@ export default function SfMap(props: SfMapProps) {
         dim={anySelected && !(selected?.kind === 'woman' && selected.id === w.id)}
         selected={!lineup && selected?.kind === 'woman' && selected.id === w.id}
         label={persona ? `${persona.persona}: ${personaHeader(persona)}` : ''}
+        faceLeft={selBuildingPt ? selBuildingPt.x < spot.x : false}
+        annotation={persona?.persona === 'Linh' && !lineup && !anySelected ? chrome.thisIsLinh : undefined}
         onActivate={activateWoman}
         onHover={onHover}
       />
@@ -314,6 +325,7 @@ export default function SfMap(props: SfMapProps) {
         <rect className="bay" x={0} y={0} width="100%" height="100%" />
         <g ref={zoomGRef} className="zoom-layer">
           {layout && <Neighborhoods shapes={layout.neighborhoods} />}
+          {layout && <Whimsy layout={layout} />}
           {layout && (
             <g className="buildings">
               {BUILDINGS.map((b, i) => {
@@ -339,7 +351,11 @@ export default function SfMap(props: SfMapProps) {
               })}
             </g>
           )}
-          <g className={`figures${reducedMotion ? '' : ' walk'}`}>{womenNodes}</g>
+          {lineup && lineupPos && (
+            <rect className="lineup-panel" aria-hidden x={lineupPos.panel.x} y={lineupPos.panel.y}
+              width={lineupPos.panel.w} height={lineupPos.panel.h} rx={18} />
+          )}
+          <g className={`figures${reducedMotion ? '' : ' walk'}${walking ? ' walking' : ''}`}>{womenNodes}</g>
         </g>
       </svg>
 

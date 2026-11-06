@@ -1,6 +1,6 @@
 'use client';
 // A building (SPEC §9.3). Base at (0,0). Teal windows = windowsTeal(pct) of 20, filled from the bottom; the rest lit.
-import { memo, type KeyboardEvent } from 'react';
+import { memo, useEffect, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import type { BuildingDef } from '@/lib/types';
 
 export interface BuildingProps {
@@ -23,6 +23,18 @@ export function buildingHeight(units: number): number {
 }
 
 function BuildingImpl(p: BuildingProps) {
+  // crane while growing, dust while shrinking (whimsy; CSS turns it off under reduced motion)
+  const [prevBuilt, setPrevBuilt] = useState(p.built);
+  const [fx, setFx] = useState<{ kind: 'grow' | 'shrink'; n: number } | null>(null);
+  if (prevBuilt !== p.built) {
+    setPrevBuilt(p.built);
+    setFx({ kind: p.built ? 'grow' : 'shrink', n: (fx?.n ?? 0) + 1 });
+  }
+  useEffect(() => {
+    if (!fx) return;
+    const t = setTimeout(() => setFx(null), 1100);
+    return () => clearTimeout(t);
+  }, [fx]);
   const h = buildingHeight(p.def.units);
   const w = BUILDING_W;
   const cols = 4, rows = 5;
@@ -39,6 +51,7 @@ function BuildingImpl(p: BuildingProps) {
         key={i}
         className={i < p.teal ? 'win teal' : 'win lit'}
         data-window={i < p.teal ? 'teal' : 'lit'}
+        style={{ '--wi': i } as CSSProperties}
         x={-w / 2 + padX + c * cw + 0.8}
         y={-h + padTop + r * ch + 0.8}
         width={cw - 1.6}
@@ -71,6 +84,17 @@ function BuildingImpl(p: BuildingProps) {
         <rect className="roof" x={-w / 2 - 1.5} y={-h - 2.5} width={w + 3} height={3} rx={1} />
         {windows}
       </g>
+      {fx?.kind === 'grow' && (
+        <g key={`c${fx.n}`} className="crane" aria-hidden>
+          <path d={`M${w / 2 + 4},0 L${w / 2 + 4},${-h - 12} M${w / 2 - 14},${-h - 10} L${w / 2 + 14},${-h - 10} M${w / 2 + 4},${-h - 12} L${w / 2 + 12},${-h - 10} M${w / 2 - 10},${-h - 10} L${w / 2 - 10},${-h - 2}`} />
+          <rect x={w / 2 - 12.5} y={-h - 2} width={5} height={3} />
+        </g>
+      )}
+      {fx?.kind === 'shrink' && (
+        <g key={`d${fx.n}`} className="dust" aria-hidden>
+          <circle cx={-9} cy={-3} r={4} /><circle cx={0} cy={-5} r={5} /><circle cx={9} cy={-3} r={4} />
+        </g>
+      )}
       <g className="nb-tag" transform={`translate(0,${-h - 9})`} aria-hidden>
         <rect x={-30} y={-9} width={60} height={13} rx={6.5} />
         <text x={0} y={1.5} textAnchor="middle">{p.notBuiltTag}</text>

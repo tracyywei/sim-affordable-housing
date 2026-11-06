@@ -16,6 +16,8 @@ export interface PersonProps {
   dim: boolean;
   selected: boolean;
   label: string;            // aria-label (personas only)
+  faceLeft: boolean;        // turn toward a selected building
+  annotation?: string;      // "this is Linh" (copy)
   onActivate(id: string): void;
   onHover(id: string | null): void;
 }
@@ -59,7 +61,7 @@ function PersonImpl(p: PersonProps) {
       <g className="fs">
       <g className="person-hop">
         <g className="person-bob" style={{ animationDelay: `${-p.bobDelay}s` }}>
-          <g transform={`scale(${p.height})`}>
+          <g transform={`scale(${p.faceLeft ? -p.height : p.height},${p.height})`} className="person-body">
             <ellipse className="person-shadow" cx={0} cy={0.4} rx={5} ry={1.6} />
             {isPersona && <circle className="persona-ring" cx={0} cy={-9} r={12} />}
             <rect className="hit" x={-7} y={-21} width={14} height={23} fill="transparent" />
@@ -69,9 +71,17 @@ function PersonImpl(p: PersonProps) {
             {p.hair === 1 && <Hair kind={1} />}
             <circle cx={0} cy={-14.9} r={3.2} className="head" />
             {p.hair !== 1 && <Hair kind={p.hair} />}
+            <circle cx={1.5} cy={-15.3} r={0.55} fill="var(--ink)" />
           </g>
         </g>
       </g>
+      {p.annotation && (
+        <g className="annotation" aria-hidden>
+          <path d="M15,-33 C10,-29 10,-20 9.5,-15" />
+          <path d="M6.8,-18 L9.5,-15 L12.2,-17.8" />
+          <text x={17} y={-34}>{p.annotation}</text>
+        </g>
+      )}
       {isPersona && (
         <g className="persona-tag" transform="translate(0,-27)">
           <rect x={-(p.persona!.length * 3.6 + 6)} y={-8} width={p.persona!.length * 7.2 + 12} height={13} rx={6.5} />
