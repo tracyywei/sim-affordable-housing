@@ -1,6 +1,6 @@
 // d3-zoom camera helpers (owner: Agent D). SPEC §9.3, §9.7.
 import { zoomIdentity, type ZoomTransform } from 'd3-zoom';
-import { FIT_PAD } from './layout';
+import { FIT_PAD, fitLeft } from './layout';
 
 export const MIN_K = 1;
 export const MAX_K = 8;
@@ -18,7 +18,7 @@ export function figureScale(k: number): number {
 
 /** Visual center of the map area (left of the right rail, between title and control bar). */
 export function mapCenter(width: number, height: number): [number, number] {
-  return [(FIT_PAD.left + width - FIT_PAD.right) / 2, (FIT_PAD.top + height - FIT_PAD.bottom) / 2];
+  return [(fitLeft(width) + width - FIT_PAD.right) / 2, (FIT_PAD.top + height - FIT_PAD.bottom) / 2];
 }
 
 /** Transform that puts map point (x, y) at the map center at zoom k. */

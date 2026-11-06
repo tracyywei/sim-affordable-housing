@@ -369,7 +369,7 @@ export default function SfMap(props: SfMapProps) {
                 <div className="lineup-label">{lineupLabels[b.status].label}</div>
               </div>
               {b.status === 'qualifies' && (
-                <div className="lineup-odds" style={{ top: b.h + 6 }}>{result ? lineupOddsLine(result) : null}</div>
+                <div className="lineup-odds" style={{ top: b.h + 6 }}>{result ? lineupOddsLine(result).replace(/1 in (\S+)/, '1\u00a0in\u00a0$1') : null}</div>
               )}
             </div>
           ))}

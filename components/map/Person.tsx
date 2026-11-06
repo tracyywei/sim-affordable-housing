@@ -64,6 +64,7 @@ function PersonImpl(p: PersonProps) {
           <g transform={`scale(${p.faceLeft ? -p.height : p.height},${p.height})`} className="person-body">
             <ellipse className="person-shadow" cx={0} cy={0.4} rx={5} ry={1.6} />
             {isPersona && <circle className="persona-ring" cx={0} cy={-9} r={12} />}
+            {isPersona && <circle className="focus-ring" cx={0} cy={-9} r={15.5} />}
             <rect className="hit" x={-7} y={-21} width={14} height={23} fill="transparent" />
             <line x1={-1.7} y1={-3} x2={-1.9} y2={0} className="leg leg-l" />
             <line x1={1.7} y1={-3} x2={1.9} y2={0} className="leg leg-r" />

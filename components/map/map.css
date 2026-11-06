@@ -152,3 +152,16 @@
 .sf-map.reduced .crane, .sf-map.reduced .dust { display: none; }
 .sf-map.reduced .building .win { animation: none; }
 @media (prefers-reduced-motion: reduce) { .crane, .dust { display: none; } .building .win { animation: none !important; } }
+
+/* ---------------- QA fixes: contrast + focus */
+.persona-tag rect { fill: #A82A62; }                       /* white text 6.6:1 */
+.person.dim { opacity: 1; }
+.person.dim .person-hop { opacity: 0.6; }                  /* tags keep full contrast when others are dimmed */
+.sf-map-svg.zoomed .nhood-labels { opacity: 0.8; }
+.lineup-block.too_much .lineup-count { color: #4F5C70; }  /* 6.0:1 on paper */
+.lineup-block.too_little .lineup-count { color: #A34A1A; }/* 5.3:1 */
+.lineup-block.qualifies .lineup-count { color: #176B6B; } /* 5.6:1 */
+.lineup-odds { left: -30px; right: -30px; }
+.focus-ring { fill: none; stroke: var(--ink); stroke-width: 2; stroke-dasharray: 4 3; opacity: 0; vector-effect: non-scaling-stroke; }
+.building:focus-visible .focus-ring, .person:focus-visible .focus-ring { opacity: 1; }
+.person:focus-visible .persona-ring { stroke: var(--persona); stroke-width: 2; }

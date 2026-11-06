@@ -134,7 +134,15 @@ function projectRings(g: Geometry, proj: GeoProjection): Ring[] {
 
 interface Region { name: string; rings: Ring[]; x0: number; y0: number; x1: number; y1: number; area: number; residential: boolean; }
 
-export const FIT_PAD = { left: 24, top: 120, right: 340, bottom: 180 };
+export const FIT_PAD = { left: 24, top: 120, right: 340, bottom: 240 };
+/** Left inset of the map fit: on wide screens keep the land clear of the bottom-left legend card. */
+export function fitLeft(width: number): number {
+  return width >= 1100 ? Math.min(360, Math.round(width * 0.25)) : FIT_PAD.left;
+}
+/** Building heights (SPEC §9.3): small (<75 units) 28 px, medium 40, large (>175) 54. */
+export function buildingHeight(units: number): number {
+  return units < 75 ? 28 : units > 175 ? 54 : 40;
+}
 export const WOMAN_MIN_DIST = 14;
 
 export function computeLayout(
@@ -148,7 +156,7 @@ export function computeLayout(
   const placeholder = !geoIn || !geoIn.features?.length;
   const geo = rewindGeo(placeholder ? placeholderGeo() : geoIn!);
   const projection = geoMercator().fitExtent(
-    [[FIT_PAD.left, FIT_PAD.top], [Math.max(FIT_PAD.left + 50, width - FIT_PAD.right), Math.max(FIT_PAD.top + 50, height - FIT_PAD.bottom)]],
+    [[fitLeft(width), FIT_PAD.top], [Math.max(fitLeft(width) + 50, width - FIT_PAD.right), Math.max(FIT_PAD.top + 50, height - FIT_PAD.bottom)]],
     geo,
   );
   const path = geoPath(projection);
@@ -204,13 +212,32 @@ export function computeLayout(
   };
 
   // 1. buildings (SPEC §4.1 neighborhoods): centroid if it fits, else a seeded spot inside
+  // footprints are 22 x h rects above the base point; keep them from overlapping (6 px margin)
+  const rects: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  const rectFree = (x: number, y: number, h: number) =>
+    rects.every((r) => x + 11 + 6 <= r.x0 || x - 11 - 6 >= r.x1 || y + 6 <= r.y0 || y - h - 6 >= r.y1);
   const bPts: Pt[] = buildings.map((b) => {
     const reg = regionFor(b.neighborhood);
-    let pt: Pt;
+    const h = buildingHeight(b.units);
+    let pt: Pt | null = null;
     const c = reg ? { x: (reg.x0 + reg.x1) / 2, y: (reg.y0 + reg.y1) / 2 } : null;
-    if (reg && c && ok(reg, c.x, c.y) && free(c.x, c.y, 34)) pt = c;
-    else pt = sampleIn(reg, 34);
-    taken.push({ ...pt, r: 34 });
+    if (reg && c && ok(reg, c.x, c.y) && rectFree(c.x, c.y, h)) pt = c;
+    for (let i = 0; !pt && reg && i < 600; i++) {
+      const x = reg.x0 + rand() * (reg.x1 - reg.x0);
+      const y = reg.y0 + rand() * (reg.y1 - reg.y0);
+      if (ok(reg, x, y) && rectFree(x, y, h)) pt = { x, y };
+    }
+    // tiny neighborhoods (Tenderloin): spiral out from the center until the footprint fits
+    for (let rad = 8; !pt && c && rad <= 120; rad += 6) {
+      for (let k = 0; k < 16 && !pt; k++) {
+        const ang = rand() * Math.PI * 2;
+        const x = c.x + Math.cos(ang) * rad, y = c.y + Math.sin(ang) * rad;
+        if (!parks.some((q) => inRings(q.rings, x, y)) && rectFree(x, y, h)) pt = { x, y };
+      }
+    }
+    if (!pt) pt = sampleIn(reg, 34);
+    rects.push({ x0: pt.x - 11, x1: pt.x + 11, y0: pt.y - h, y1: pt.y });
+    taken.push({ x: pt.x, y: pt.y - h / 2 + 6, r: Math.max(30, h / 2 + 10) });
     return pt;
   });
 
@@ -224,6 +251,9 @@ export function computeLayout(
   for (const p of Object.values(personas)) {
     const pt = sampleIn(regionFor(p.neighborhood), 22);
     taken.push({ ...pt, r: 22 });
+    // room for the name tag, and for Linh's "this is Linh" note to the upper right
+    taken.push({ x: pt.x, y: pt.y - 24, r: 20 });
+    if (p.persona === 'Linh') taken.push({ x: pt.x + 40, y: pt.y - 22, r: 26 }, { x: pt.x + 78, y: pt.y - 22, r: 26 });
     spots[p.id] = { ...pt, ...deco() };
   }
 
@@ -254,7 +284,7 @@ const LINEUP_FOOT = 58;      // odds line under the qualify block
 /** Three blocks (too_much, too_little, qualifies) side by side in the middle of the map area. */
 export function computeLineup(women: Woman[], width: number, height: number): Lineup {
   void height;
-  const x0 = FIT_PAD.left, x1 = Math.max(x0 + 300, width - FIT_PAD.right);
+  const x0 = FIT_PAD.left, x1 = Math.max(x0 + 300, width - FIT_PAD.right);   // lineup ignores fitLeft (legend sits below it)
   const groups = STATUSES.map((s) => women.filter((w) => w.status === s));
   const maxN = Math.max(1, ...groups.map((g) => g.length));
   const availH = LINEUP_BOTTOM - LINEUP_TOP - LINEUP_HEAD - LINEUP_FOOT;
@@ -278,6 +308,6 @@ export function computeLineup(women: Woman[], width: number, height: number): Li
     });
     return { status: STATUSES[gi], x: bx, y: top, w: blockW, h: blockH, count: g.length };
   });
-  const panel = { x: left - 24, y: LINEUP_TOP - 8, w: totalW + 48, h: Math.min(LINEUP_BOTTOM, top + blockH + LINEUP_FOOT) - LINEUP_TOP + 16 };
+  const panel = { x: left - 40, y: LINEUP_TOP - 8, w: totalW + 80, h: Math.min(LINEUP_BOTTOM, top + blockH + LINEUP_FOOT) - LINEUP_TOP + 16 };
   return { spots, blocks, panel };
 }

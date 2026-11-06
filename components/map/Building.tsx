@@ -2,6 +2,7 @@
 // A building (SPEC §9.3). Base at (0,0). Teal windows = windowsTeal(pct) of 20, filled from the bottom; the rest lit.
 import { memo, useEffect, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import type { BuildingDef } from '@/lib/types';
+import { buildingHeight } from '@/lib/layout';
 
 export interface BuildingProps {
   index: number;
@@ -18,9 +19,7 @@ export interface BuildingProps {
 }
 
 export const BUILDING_W = 22;
-export function buildingHeight(units: number): number {
-  return units < 75 ? 28 : units > 175 ? 54 : 40;
-}
+export { buildingHeight };
 
 function BuildingImpl(p: BuildingProps) {
   // crane while growing, dust while shrinking (whimsy; CSS turns it off under reduced motion)
@@ -77,6 +76,7 @@ function BuildingImpl(p: BuildingProps) {
     >
       <g className="fs">
       <rect className="hit" x={-w / 2 - 3} y={-h - 4} width={w + 6} height={h + 8} fill="transparent" />
+      <rect className="focus-ring" x={-w / 2 - 5} y={-h - 7} width={w + 10} height={h + 11} rx={4} />
       <ellipse className="building-shadow" cx={2} cy={0.5} rx={w / 2 + 3} ry={2.2} />
       <rect className="ghost" x={-w / 2} y={-h} width={w} height={h} rx={1.5} />
       <g className="solid">
