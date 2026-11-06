@@ -2,7 +2,7 @@
 import type { Meta, NeighborhoodsGeo, PersonasFile, Woman } from './types';
 
 /** true = fake fixture (public/data/fixture). MUST be false for the demo. */
-export const USE_FIXTURE = true;
+export const USE_FIXTURE = false;
 
 const base = USE_FIXTURE ? '/data/fixture' : '/data';
 

@@ -1,1 +1,26 @@
-{}
+{
+  "5": {
+    "key": "[5,[5,17,2280,117,284,45,\"00011111111111111111\"],[10,13,1400,141,236,54,\"00000001111111111111\"],43,41,16,9]",
+    "text": "At 5%, 17 of 20 buildings get built, adding 2,280 new homes, but only 117 are affordable, 24 fewer than at 10%. A household that qualifies has odds of 1 in 284 from these 20 buildings, and about 45 affordable homes would go to women-led households. Of 100 women-led renter households, only 16 qualify: 41 earn too little and 43 earn too much, though 9 of those still spend 30% or more on rent.",
+    "model": "claude-opus-5-5",
+    "savedAt": "2026-11-06T19:31:40.671Z"
+  },
+  "8": {
+    "key": "[8,[8,15,1850,148,225,57,\"00000111111111111111\"],[10,13,1400,141,236,54,\"00000001111111111111\"],43,41,16,9]",
+    "text": "At 8%, 15 of 20 buildings get built, making 1,850 new homes, 148 of them affordable, with about 57 going to women-led households. Even for a household that qualifies, there are too few homes: the odds are 1 in 225 from these 20 buildings. Of 100 women-led renter households, only 16 qualify. 43 earn too much (9 still spend 30%+ on rent) and 41 earn too little.",
+    "model": "claude-opus-5-5",
+    "savedAt": "2026-11-06T19:31:46.632Z"
+  },
+  "10": {
+    "key": "[10,[10,13,1400,141,236,54,\"00000001111111111111\"],[10,13,1400,141,236,54,\"00000001111111111111\"],43,41,16,9]",
+    "text": "At 10%, 13 of 20 buildings get built (an illustrative estimate), creating 1,400 new homes, 141 of them affordable, and about 54 would go to women-led households. Of 100 women-led renter households, only 16 qualify, with odds of 1 in 236 from these 20 buildings. The other 43 earn too much, though 9 of them still spend 30%+ of income on rent, and 41 earn too little.",
+    "model": "claude-opus-5-5",
+    "savedAt": "2026-11-06T19:31:49.583Z"
+  },
+  "20": {
+    "key": "[20,[20,6,240,48,693,18,\"00000000000000111111\"],[10,13,1400,141,236,54,\"00000001111111111111\"],43,41,16,9]",
+    "text": "At 20%, only 6 of 20 buildings get built, making 48 affordable homes, compared with 141 at 10%. About 18 would go to women-led households, and a qualifying household's odds are 1 in 693 from these 20 buildings. Of 100 women-led renter households, only 16 qualify. 43 earn too much (9 of them still spend 30%+ of income on rent), and 41 earn too little.",
+    "model": "claude-opus-5-5",
+    "savedAt": "2026-11-06T19:31:55.255Z"
+  }
+}

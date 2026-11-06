@@ -5,17 +5,13 @@ import { stillCaption } from '@/lib/copy';
 export interface StillCaptionProps { pct: number; womenCount: number; hasDragged: boolean; }
 
 export default function StillCaption({ pct, womenCount, hasDragged }: StillCaptionProps) {
-  const [show, setShow] = useState(false);
+  const [shownFor, setShownFor] = useState<number | null>(null);
   useEffect(() => {
     if (!hasDragged) return;
-    setShow(false);
-    let hide: number | undefined;
-    const t = window.setTimeout(() => {
-      setShow(true);
-      hide = window.setTimeout(() => setShow(false), 3000);
-    }, 600);
-    return () => { window.clearTimeout(t); if (hide) window.clearTimeout(hide); };
+    const show = window.setTimeout(() => setShownFor(pct), 600);
+    const hide = window.setTimeout(() => setShownFor(null), 3600);
+    return () => { window.clearTimeout(show); window.clearTimeout(hide); };
   }, [pct, hasDragged]);
-  if (!show) return null;
+  if (shownFor !== pct) return null;
   return <p className="still-caption" role="status" data-hud="still-caption">{stillCaption(womenCount)}</p>;
 }

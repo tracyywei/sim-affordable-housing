@@ -1,5 +1,5 @@
 // Owner: Agent E. 🏢 Buildings · 🏠 Affordable homes · 🎟 Odds, each with its change vs. the starting point in words.
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { affordableCard, buildingsCard, noBuildingsBanner, oddsCard, type ScoreCard } from '@/lib/copy';
 import type { ScoreboardsProps } from '@/lib/types';
 
@@ -29,14 +29,12 @@ function Score({ kind, icon, card, tilt, circleKey, sentence = false }: { kind: 
 
 export default function Scoreboards({ result, baseline, total }: ScoreboardsProps) {
   // the self-drawing circle around the odds whenever they change (not on first paint)
-  const prevOdds = useRef(result.oddsN);
+  const [prevOdds, setPrevOdds] = useState(result.oddsN);
   const [circle, setCircle] = useState<number | undefined>(undefined);
-  useEffect(() => {
-    if (prevOdds.current === result.oddsN) return;
-    prevOdds.current = result.oddsN;
-    if (result.oddsN !== null) setCircle((c) => (c ?? 0) + 1);
-    else setCircle(undefined);
-  }, [result.oddsN]);
+  if (prevOdds !== result.oddsN) {
+    setPrevOdds(result.oddsN);
+    setCircle(result.oddsN !== null ? (circle ?? 0) + 1 : undefined);
+  }
 
   return (
     <>

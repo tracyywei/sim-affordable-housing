@@ -116,8 +116,8 @@ export function changeWords(now: number, then: number, noun = '', basePct: numbe
   if (n && abs === 1 && n.endsWith('s')) n = n.slice(0, -1);
   const mid = n ? ` ${n}` : '';
   return d > 0
-    ? { text: `${fmtInt(abs)}${mid} more than at ${basePct}%`, tone: 'more' }
-    : { text: `${fmtInt(abs)}${mid} fewer than at ${basePct}%`, tone: 'fewer' };
+    ? { text: `${fmtInt(abs)} more${mid} than at ${basePct}%`, tone: 'more' }
+    : { text: `${fmtInt(abs)} fewer${mid} than at ${basePct}%`, tone: 'fewer' };
 }
 
 export interface ScoreCard {
@@ -518,14 +518,14 @@ export const drawerCopy = {
 
   womenNote(meta: Pick<Meta, 'synthetic'>): string {
     return meta.synthetic
-      ? 'Women are synthetic records, based on Census statistics, with invented names.'
+      ? 'These women are synthetic, based on Census statistics, with invented names.'
       : 'Women are real anonymized Census records with invented names.';
   },
 
   /** null when meta.forScale is null: don't render the line. */
   forScale(meta: Pick<Meta, 'forScale'>): string | null {
     if (!meta.forScale) return null;
-    return `For scale: SF completed ${fmtInt(meta.forScale.affordableHomes)} affordable homes through this program in ${meta.forScale.year}.`;
+    return `For scale: SF completed ${fmtInt(meta.forScale.affordableHomes)} affordable homes in ${meta.forScale.year}.`;
   },
 
   claudeNote: 'Claude explains the numbers on screen; it does not recommend a policy.',
@@ -644,6 +644,6 @@ export function explainPayloadKey(req: ExplainRequest): string {
 export function explainInstruction(total: number): string {
   return [
     '2–3 plain sentences for someone who knows nothing about housing. Use only numbers in the payload. Say who is helped and who is left out, and why (too much / too little / too few homes). Don\'t recommend a policy.',
-    `Also: never use the words AMI, inclusionary, BMR, feasible, feasibility or pencils. Say "gets built" / "not built" instead. When you mention odds, say "from these ${total} buildings", never "per year" or "this year". Use only the numbers given in the facts and payload, written as digits; don't compute new percentages, ratios or totals. Plain text only, no markdown, no lists.`,
+    `Also: never use the words AMI, inclusionary, BMR, feasible, feasibility or pencils. Say "gets built" / "not built" instead. When you mention odds, say "from these ${total} buildings", never "per year" or "this year". Use only the numbers given in the facts and payload, written as digits; don't compute new percentages, ratios or totals. Plain text only, no markdown, no lists. Keep it under 75 words.`,
   ].join('\n');
 }

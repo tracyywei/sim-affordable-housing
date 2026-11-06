@@ -16,11 +16,11 @@ export interface PopoverProps {
 export default function Popover({ x, y, variant, title, lines, closeLabel, onClose }: PopoverProps) {
   return (
     <div
-      className={`map-popover card ${variant}`}
+      className={`map-popover card ${variant}${y < 300 ? ' below' : ''}`}
       role="dialog"
       aria-label={title}
       data-popover={variant}
-      style={{ left: x, top: y }}
+      style={{ left: x, top: y < 300 ? y + 40 : y }}
       onPointerDown={(e) => e.stopPropagation()}
       onWheel={(e) => e.stopPropagation()}
     >

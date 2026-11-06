@@ -15,10 +15,14 @@ import {
   unknownNumbers,
 } from '@/lib/copy';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+// Node runtime (default) for fs. No `dynamic` export: cacheComponents is on, and POST handlers are never cached.
 
 const TIMEOUT_MS = 8000;
+// SPEC: 300 tokens for the answer. Current models (e.g. claude-opus-5-5) always think, and thinking counts
+// against max_tokens (measured: 248 of 300 at effort 'low', which cut the answer off), so add headroom.
+// The answer length itself is held by the prompt ("under 75 words").
+const ANSWER_TOKENS = 300;
+const THINKING_HEADROOM = 700;
 const CACHED_PCTS = [5, 8, 10, 20];
 // Models that accept server-side refusal fallbacks ("default" form).
 const FALLBACK_MODELS = new Set(['claude-opus-5-5', 'claude-opus-5', 'claude-sonnet-5-5', 'claude-fable-5-1']);
@@ -72,7 +76,7 @@ async function askClaude(req: ExplainRequest): Promise<string | null> {
   try {
     const params = {
       model,
-      max_tokens: 300,
+      max_tokens: ANSWER_TOKENS + THINKING_HEADROOM,
       system,
       output_config: { effort: 'low' as const },
       messages: [{ role: 'user' as const, content: user }],
@@ -84,10 +88,15 @@ async function askClaude(req: ExplainRequest): Promise<string | null> {
         )
       : await client.messages.create(params, { signal: controller.signal, timeout: TIMEOUT_MS });
     if (msg.stop_reason === 'refusal') return null;
-    const text = msg.content
+    let text = msg.content
       .map((b) => (b.type === 'text' ? b.text : ''))
       .join('')
       .trim();
+    if (msg.stop_reason === 'max_tokens') {
+      // Cut off mid-sentence: keep only complete sentences, or give up (template).
+      const end = Math.max(text.lastIndexOf('. '), text.endsWith('.') ? text.length - 1 : -1);
+      text = end > 0 ? text.slice(0, end + 1).trim() : '';
+    }
     return text || null;
   } catch (err) {
     console.warn('[explain] Claude call failed:', err instanceof Error ? err.name + ': ' + err.message : err);

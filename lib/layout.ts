@@ -170,6 +170,9 @@ export function computeLayout(
   const taken: { x: number; y: number; r: number }[] = [];
   const free = (x: number, y: number, r: number) => taken.every((t) => (t.x - x) ** 2 + (t.y - y) ** 2 >= Math.max(t.r, r) ** 2);
   const residentialRegions = [...regions.values()].filter((r) => r.residential && r.area > 0);
+  const parks = [...regions.values()].filter((r) => !r.residential);
+  // overlapping borders: never land a figure on a park polygon
+  const ok = (g: Region, x: number, y: number) => inRings(g.rings, x, y) && !parks.some((p) => inRings(p.rings, x, y));
   const totalArea = residentialRegions.reduce((s, r) => s + r.area, 0);
 
   const pickRegion = (): Region => {
@@ -182,14 +185,14 @@ export function computeLayout(
       const g = reg ?? pickRegion();
       const x = g.x0 + rand() * (g.x1 - g.x0);
       const y = g.y0 + rand() * (g.y1 - g.y0);
-      if (inRings(g.rings, x, y) && free(x, y, r)) return { x, y };
+      if (ok(g, x, y) && free(x, y, r)) return { x, y };
     }
     // relax spacing rather than fail
     for (let i = 0; i < tries; i++) {
       const g = reg ?? pickRegion();
       const x = g.x0 + rand() * (g.x1 - g.x0);
       const y = g.y0 + rand() * (g.y1 - g.y0);
-      if (inRings(g.rings, x, y)) return { x, y };
+      if (ok(g, x, y)) return { x, y };
     }
     const g = reg ?? pickRegion();
     return { x: (g.x0 + g.x1) / 2, y: (g.y0 + g.y1) / 2 };
@@ -205,7 +208,7 @@ export function computeLayout(
     const reg = regionFor(b.neighborhood);
     let pt: Pt;
     const c = reg ? { x: (reg.x0 + reg.x1) / 2, y: (reg.y0 + reg.y1) / 2 } : null;
-    if (reg && c && inRings(reg.rings, c.x, c.y) && free(c.x, c.y, 34)) pt = c;
+    if (reg && c && ok(reg, c.x, c.y) && free(c.x, c.y, 34)) pt = c;
     else pt = sampleIn(reg, 34);
     taken.push({ ...pt, r: 34 });
     return pt;

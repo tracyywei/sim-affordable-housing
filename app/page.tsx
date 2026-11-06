@@ -8,6 +8,8 @@ import { loadRawData } from '@/lib/data';
 import { precompute } from '@/lib/sim';
 import { START_PCT, MAX_PCT, TOTAL_BUILDINGS } from '@/lib/constants';
 import { chrome, explainTemplate, claudeNapPrefix } from '@/lib/copy';
+import { ui } from '@/components/hud/text';
+import StillCaption from '@/components/hud/StillCaption';
 import type {
   AppData, CameraHandle, ExplainRequest, ExplainResponse, ExplainState, PersonaName, Persona, Selection, ValidationRow,
 } from '@/lib/types';
@@ -139,7 +141,7 @@ export default function Page() {
   if (!data) {
     return (
       <main>
-        <p className="hud-loading" role="status">{loadError ? chrome.loadError : chrome.loading}</p>
+        <p className="hud-loading" role="status">{loadError ? ui('loadError') : ui('loading')}</p>
       </main>
     );
   }
@@ -153,6 +155,7 @@ export default function Page() {
     <main>
       <ControlBar pct={pct} onChange={onChange} onExplain={onExplain} explainLoading={explain.loading} hasDragged={hasDragged} />
       <ClaudeBubble explain={explain} onClose={closeExplain} />
+      <StillCaption pct={pct} womenCount={data.women.length} hasDragged={hasDragged} />
       <Legend
         counts={data.meta.counts}
         gapCount={data.meta.gapCount}
@@ -167,10 +170,11 @@ export default function Page() {
         onZoomOut={() => cameraRef.current?.zoomOut()}
         onReset={onReset}
       />
-      <aside className="rail" aria-label={chrome.railLabel}>
+      <aside className="rail" aria-label={ui('railLabel')}>
         <Scoreboards result={result} baseline={baseline} total={TOTAL_BUILDINGS} />
         <AffordableCard meta={data.meta} persona={selectedPersona} />
       </aside>
+      {selected && !lineup && <p className="zoom-hint" aria-hidden="true">{chrome.escToZoomOut}</p>}
       <TitleBlock onOpenInfo={() => setDrawerOpen(true)} />
       <InfoDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} meta={data.meta} validation={validation} />
       <div className="map-layer">

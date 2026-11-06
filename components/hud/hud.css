@@ -60,7 +60,7 @@
   background: #F4B48F; color: #1F1F1F; border: 2px solid var(--ink); border-radius: 10px;
   padding: 8px 12px; font-weight: 700; font-size: 14px;
 }
-.odds-circle { position: absolute; inset: -6px -14px; pointer-events: none; overflow: visible; }
+.odds-circle { position: absolute; inset: -4px -12px -2px -12px; pointer-events: none; overflow: visible; }
 .odds-circle path {
   fill: none; stroke: var(--persona); stroke-width: 2.5; stroke-linecap: round;
   stroke-dasharray: 300; stroke-dashoffset: 300; animation: draw-circle 700ms ease-out forwards;
@@ -107,9 +107,9 @@
 }
 .pct-pill.bounce { animation: pill-bounce 260ms ease-out; }
 @keyframes pill-bounce { 0% { transform: scale(1); } 40% { transform: scale(1.12); } 100% { transform: scale(1); } }
-.cb-slider { position: relative; margin: 10px 4px 0; padding-bottom: 32px; }
+.cb-slider { position: relative; margin: 24px 4px 0; padding-bottom: 46px; }
 .drag-me {
-  position: absolute; top: -30px; font-family: var(--font-hand); font-size: 22px; color: var(--ink);
+  position: absolute; top: -28px; font-family: var(--font-hand); font-size: 22px; line-height: 1; color: var(--ink);
   transform: translateX(-50%) rotate(-4deg); pointer-events: none; white-space: nowrap;
   transition: opacity 400ms ease;
 }
@@ -142,7 +142,7 @@
 .cb-tick { position: absolute; transform: translateX(-50%); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
 .cb-tick svg { display: block; margin: 0 auto 1px; }
 .cb-start {
-  position: absolute; top: 46px; transform: translateX(-50%); font-size: 12px; white-space: nowrap;
+  position: absolute; top: 30px; transform: translateX(-50%); font-size: 12px; white-space: nowrap;
   font-weight: 700; pointer-events: none;
 }
 .cb-sentence { margin: 0; font-size: 15px; min-height: 1.4em; }
@@ -151,7 +151,7 @@
 .explain-btn[aria-busy='true'] .sparkle { display: inline-block; animation: twinkle 900ms ease-in-out infinite; }
 @keyframes twinkle { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.8); } }
 .still-caption {
-  position: fixed; left: 50%; bottom: 200px; z-index: 11; margin-top: 0; width: 520px; margin-left: -260px;
+  position: fixed; left: 50%; bottom: 246px; z-index: 11; margin-top: 0; width: 520px; margin-left: -260px;
   font-family: var(--font-hand); font-size: 22px; line-height: 1.15; text-align: center;
   background: rgba(246, 241, 231, 0.94); border-radius: 10px; padding: 4px 10px; pointer-events: none;
   animation: fade-in 300ms ease-out;
@@ -159,7 +159,7 @@
 
 /* ---------------------------------------------------------- Claude bubble */
 .bubble {
-  position: fixed; left: 50%; bottom: 196px; z-index: 12;
+  position: fixed; left: 50%; bottom: 250px; z-index: 12;
   width: 520px; margin-left: -260px; padding: 14px 40px 14px 16px; font-size: 16px; line-height: 1.45;
 }
 .bubble::after {
